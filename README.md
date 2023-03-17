@@ -1,8 +1,11 @@
 # Chimpanzee Tracking
 
-Google Colab notebooks for Chimpanzee tracking.
+This project provides an interface to track chimpanzees in videos.  It
+uses [Google
+Colab](https://colab.research.google.com/notebooks/intro.ipynb).
 
-Only the [tracking notebook](./tracking.ipynb) is implemented.
+To start [![Open In
+Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ox-vgg/chimpanzee-tracking/blob/main/tracking.ipynb)
 
 ## License
 
