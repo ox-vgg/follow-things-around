@@ -1,4 +1,4 @@
-# + [markdown] id="AR4oetmCFHUa"
+# %% [markdown] id="AR4oetmCFHUa"
 # # VGG Chimpanzee Tracking
 #
 # This project provides an interface to track chimpanzees in the wild.
@@ -14,7 +14,7 @@
 #   [[paper]](https://advances.sciencemag.org/content/advances/5/9/eaaw0736.full.pdf)
 #
 
-# + [markdown] id="O3vImnLxFHUf"
+# %% [markdown] id="O3vImnLxFHUf"
 # ## 1 - Read Me First
 #
 # This project is a [Jupyter](https://jupyter.org/) notebook to track
@@ -24,7 +24,7 @@
 # [here](https://colab.research.google.com/github/ox-vgg/chimpanzee-tracking/blob/main/tracking.ipynb).
 #
 
-# + [markdown] id="-tfDPTizFHUi"
+# %% [markdown] id="-tfDPTizFHUi"
 # ### 1.1 - What is, and how to use, a Jupyter notebook
 #
 # A Jupyter notebook is a series of "cells".  Each cell contains either
@@ -38,7 +38,7 @@
 # before "running" the next cell.
 #
 
-# + [markdown] id="4kkvU97kDjYh"
+# %% [markdown] id="4kkvU97kDjYh"
 # ### 1.2 - Particulars of this notebook
 #
 # This notebook was designed to run in Google Colab and to analyse
@@ -53,7 +53,7 @@
 # like other code cells.  Setting their values only has effect after you
 # "run" their cell.
 
-# + [markdown] id="meUaiJq1V-tI"
+# %% [markdown] id="meUaiJq1V-tI"
 # ### 1.3 - Testing this notebook
 #
 # We recommend you first test this notebook with a short video, less
@@ -61,7 +61,7 @@
 # [here](https://thor.robots.ox.ac.uk/software/chimpanzee-tracking/test-data/19-mini.mp4)),
 # and then a video fragment of your own videos.
 
-# + [markdown] id="iXk_VjsyDmtS"
+# %% [markdown] id="iXk_VjsyDmtS"
 # ### 1.4 - Results files
 #
 # This notebook will save all the results in a single directory.  It
@@ -86,7 +86,7 @@
 # our recommendation is to create a results directory for each video.
 #
 
-# + [markdown] id="vuE9bu6GDpOv"
+# %% [markdown] id="vuE9bu6GDpOv"
 # ### 1.5 - GPU access
 #
 # A GPU is required to run this pipeline in a sensible manner.  For
@@ -100,7 +100,7 @@
 # Settings" and select "GPU" from the "Hardware Accelerator" menu.
 #
 
-# + [markdown] id="AU4JuuRqDrxQ"
+# %% [markdown] id="AU4JuuRqDrxQ"
 # ### 1.6 - Moving forward
 #
 # You can run this notebook on Google Colab but if you have a large
@@ -111,15 +111,15 @@
 # Colab Plans](https://colab.research.google.com/signup).
 #
 
-# + [markdown] id="wWhspjzoFHUl"
+# %% [markdown] id="wWhspjzoFHUl"
 # ## 2 - Setup
 #
 
-# + [markdown] id="z9eagfzTBgMh"
+# %% [markdown] id="z9eagfzTBgMh"
 # ### 2.1 - Check for GPU access
 #
 
-# + cellView="form" id="k72IXhXhFHUn"
+# %% cellView="form" id="k72IXhXhFHUn"
 #@markdown By default, this notebook will run with a GPU.  However, it
 #@markdown is possible that you were not allocated one.  If you get a
 #@markdown message saying that you do not have access to a GPU,
@@ -138,12 +138,11 @@ else:
     print('You are connected to the following GPUs:')
     print(gpu_info)
 
-
-# + [markdown] id="0jKiMdsdBpQO"
+# %% [markdown] id="0jKiMdsdBpQO"
 # ### 2.2 - Install and load dependencies
 #
 
-# + cellView="form" id="y3Nw3Km_FHUp"
+# %% cellView="form" id="y3Nw3Km_FHUp"
 #@markdown
 
 #^ this @markdown above is just so that we can set cellView to form
@@ -211,12 +210,11 @@ from svt.siamrpn_tracker import siamrpn_tracker
 from ssd_pytorch.data import base_transform
 from ssd_pytorch.ssd import build_ssd
 
-
-# + [markdown] id="chRTgjgMCJdd"
+# %% [markdown] id="chRTgjgMCJdd"
 # ### 2.3 - Mount Google Drive
 #
 
-# + cellView="form" id="iOD4aWrjFHUr"
+# %% cellView="form" id="iOD4aWrjFHUr"
 #@markdown When you run this cell, a dialog will appear about a
 #@markdown request for access to your Google Drive Files.  This is
 #@markdown required to access the videos for analysis and to then save
@@ -226,12 +224,11 @@ from ssd_pytorch.ssd import build_ssd
 
 google.colab.drive.mount('/content/drive')
 
-
-# + [markdown] id="lb_oICb3CPpC"
+# %% [markdown] id="lb_oICb3CPpC"
 # ### 2.4 - Video file and results folder
 #
 
-# + cellView="form" id="Gk90XC-8FHUs"
+# %% cellView="form" id="Gk90XC-8FHUs"
 #@markdown To find the correct path, open the "Files" menu in the left
 #@markdown sidebar.  The `drive` directory contains your Google Drive
 #@markdown files.  Navigate the files, right click on the wanted file
@@ -252,7 +249,7 @@ if not os.path.isdir(RESULTS_DIRECTORY):
         'The RESULTS_DIRECTORY \'%s\' does not exist' % RESULTS_DIRECTORY
     )
 
-# + [markdown] id="7c1gbeVrFHUu"
+# %% [markdown] id="7c1gbeVrFHUu"
 # ### 2.5 - Advanced options
 #
 # The cells hidden in this section expose the advanced options for this
@@ -261,7 +258,7 @@ if not os.path.isdir(RESULTS_DIRECTORY):
 # all the hidden cells inside.
 #
 
-# + cellView="form" id="SH-IeyipFHUv"
+# %% cellView="form" id="SH-IeyipFHUv"
 #@markdown #### 2.5.1 - Chimpanzee detection
 
 #@markdown The detection step is the first step.  It detects the
@@ -286,8 +283,7 @@ DETECTION_MODEL = 'https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/fa
 #@markdown removed later.
 DETECTION_THRESHOLD = 0.37  #@param {type: "slider", min: 0.0, max: 1.0, step: 0.01}
 
-
-# + cellView="form" id="nmuWC94sFHUw"
+# %% cellView="form" id="nmuWC94sFHUw"
 #@markdown #### 2.5.2 - Chimpanzee tracking
 
 #@markdown The final step is to track the detected chimpanzees in the
@@ -302,16 +298,14 @@ MATCH_OVERLAP_THRESHOLD = 0.6 #@param {type:"slider", min:0.0, max:1.0, step:0.0
 
 UNKNOWN_TRACK_ID_MARKER = -1
 
-
-# + cellView="form" id="YUIcftRMFHUy"
+# %% cellView="form" id="YUIcftRMFHUy"
 #@markdown #### 2.5.3 - Verbosity
 
 #@markdown How chatty do you want the notebook to be?  INFO is a good
 #@markdown choice if you want to have a feeling for progress.
 LOG_LEVEL = 'INFO'  #@param ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]
 
-
-# + cellView="form" id="OWKXpxAuFHUy"
+# %% cellView="form" id="OWKXpxAuFHUy"
 #@markdown #### 2.5.4 - The final setup step
 
 #@markdown Run this cell to perform the final pipeline setup based on
@@ -863,8 +857,7 @@ def make_frames_with_tracks(
         cv2.imwrite(os.path.join(out_frames_dir, row.frame_filename), img)
 
 
-
-# + [markdown] id="XIgX5CS8FHU0"
+# %% [markdown] id="XIgX5CS8FHU0"
 # ## 3 - Convert video to frames
 #
 # The pipeline needs the video frames as individual image files.  This
@@ -874,7 +867,7 @@ def make_frames_with_tracks(
 # already exists to prevent overwriting any existing data.
 #
 
-# + cellView="form" id="E4xj4YRWFHU0"
+# %% cellView="form" id="E4xj4YRWFHU0"
 #@markdown Skip this cell if you already have the frames.  If you run
 #@markdown this cell and the `frames` directory already exists, it
 #@markdown errors to avoid overwriting any previous images.
@@ -885,8 +878,7 @@ ffmpeg_video_to_frames(VIDEO_FILE, FRAMES_DIR)
 
 _logger.info('Finished extracting individual frames to \'%s\'', FRAMES_DIR)
 
-
-# + [markdown] id="AAhN5CkMFHU0"
+# %% [markdown] id="AAhN5CkMFHU0"
 # ## 4 - Detection step
 #
 # The detection of chimpanzees is the first step in the pipeline.  If
@@ -896,7 +888,7 @@ _logger.info('Finished extracting individual frames to \'%s\'', FRAMES_DIR)
 # to click in "2 cells hidden" to see them).
 #
 
-# + cellView="form" id="jk_beBJTFHU2"
+# %% cellView="form" id="jk_beBJTFHU2"
 #@markdown ### 4.1 - Run detection (option 1)
 
 video_frames = sorted(glob.glob(os.path.join(FRAMES_DIR, '*.jpg')))
@@ -923,8 +915,7 @@ with open(DETECTIONS_FPATH, 'wb') as fh:
     )
 _logger.info('Detection results saved to \'%s\'', DETECTIONS_FPATH)
 
-
-# + cellView="form" id="xHVc5I4EFHU2"
+# %% cellView="form" id="xHVc5I4EFHU2"
 #@markdown ### 4.2 - Load previous detection results (option 2)
 
 with open(DETECTIONS_FPATH, 'rb') as fh:
@@ -936,12 +927,11 @@ video_frames = list(frame_id_to_filename.values())
 
 _logger.info('Detection results loaded from \'%s\'', DETECTIONS_FPATH)
 
-
-# + [markdown] id="FN5FGZxJFHU3"
+# %% [markdown] id="FN5FGZxJFHU3"
 # ## 5 - Tracking step
 #
 
-# + cellView="form" id="GodRuQQ4FHU3"
+# %% cellView="form" id="GodRuQQ4FHU3"
 #@markdown The final step in the pipeline is to track the detected
 #@markdown chimpanzees in the video.  At the end of this step, the
 #@markdown tracking results will be saved in a CSV file and as a
@@ -969,16 +959,15 @@ svt_detections.export_via_project(
 )
 svt_detections.export_plain_csv(CSV_FPATH, {})
 
-
-# + [markdown] id="1XoTxVlsFHU3"
+# %% [markdown] id="1XoTxVlsFHU3"
 # ## 6 - Visualise tracking results
 #
 
-# + [markdown] id="LL5er1FZCiBo"
+# %% [markdown] id="LL5er1FZCiBo"
 # ### 6.1 - Visualise in Google Colab (option 1)
 #
 
-# + cellView="form" id="4sbn8DsHIi1C"
+# %% cellView="form" id="4sbn8DsHIi1C"
 #@markdown You can see the tracking results right here, inside this
 #@markdown Google Colab notebook, but the interface is a bit slow.
 #@markdown This is fine if you want to have a quick look at some of
@@ -993,12 +982,11 @@ svt_detections.export_plain_csv(CSV_FPATH, {})
 
 display_detections(frame_id_to_filename, svt_detections.detection_data['0'])
 
-
-# + [markdown] id="i5FjIafRC8te"
+# %% [markdown] id="i5FjIafRC8te"
 # ### 6.2 - Visualise locally with VIA (option 2)
 #
 
-# + [markdown] id="QBdj3CToLPVG"
+# %% [markdown] id="QBdj3CToLPVG"
 # [VIA](https://www.robots.ox.ac.uk/~vgg/software/via/) is a web
 # application to view and perform annotations of image, audio, and
 # video.  It is free software and runs locally on the web browser.  You
@@ -1028,11 +1016,11 @@ display_detections(frame_id_to_filename, svt_detections.detection_data['0'])
 #    `frames` directory in your computer.
 #
 
-# + [markdown] id="5kfdOPAfCpyx"
+# %% [markdown] id="5kfdOPAfCpyx"
 # ### 6.3 - Create video file with tracks (option 3)
 #
 
-# + cellView="form" id="l44oU0LWA7nw"
+# %% cellView="form" id="l44oU0LWA7nw"
 #@markdown You may also generate a video file with the detections
 #@markdown superimposed.  The video file will be named `tracks.mp4`
 #@markdown and saved in the `RESULTS_DIRECTORY` in your Google Drive.
@@ -1046,4 +1034,3 @@ with tempfile.TemporaryDirectory() as out_frames_dir:
     shutil.move(tmp_tracks_fpath, TRACKS_VIDEO_FPATH)
 
 _logger.info('Video file with tracks created \'%s\'', TRACKS_VIDEO_FPATH)
-
