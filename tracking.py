@@ -785,9 +785,7 @@ def display_detections(
     IPython.display.display(whole_box)
 
 
-def make_frames_with_tracks(
-    csv_fpath: str, in_frames_dir: str, out_frames_dir: str
-) -> None:
+def draw_tracks_in_img(img, frame_tracks: pd.DataFrame) -> None:
     cmap = list(matplotlib.cm.Pastel1.colors)
     cmap = [(int(c[0] * 255), int(c[1] * 255), int(c[2] * 255)) for c in cmap]
 
@@ -795,22 +793,11 @@ def make_frames_with_tracks(
     font_scale = 1
     font_thickness = 1
 
-    img = None
-    prev_frame_id = None
-
-    track_data = pd.read_csv(csv_fpath)
-    track_data.sort_values('frame_id', inplace=True)
-    for row in track_data.itertuples():
+    for row in frame_tracks:
         # Some detections have no track.  Do not show them on the
         # video.
         if row.track_id == UNKNOWN_TRACK_ID_MARKER:
             continue
-
-        # Read image only if this is a different frame, otherwise,
-        # keep appending boxes and labels to the previous image.
-        if prev_frame_id != row.frame_id:
-            img = cv2.imread(os.path.join(in_frames_dir, row.frame_filename))
-            prev_frame_id = row.frame_id
 
         colour = cmap[row.track_id % len(cmap)]
         label = str(row.track_id)
@@ -854,7 +841,26 @@ def make_frames_with_tracks(
             color=(0, 0, 0),
             lineType=cv2.LINE_AA,
         )
-        cv2.imwrite(os.path.join(out_frames_dir, row.frame_filename), img)
+
+
+def make_frames_with_tracks(
+    csv_fpath: str, in_frames_dir: str, out_frames_dir: str
+) -> None:
+    track_data = pd.read_csv(csv_fpath)
+    track_data.sort_values('frame_filename', inplace=True)
+    track_data.set_index(keys=['frame_filename'], drop=False, inplace=True)
+
+    for frame_fname in sorted(os.listdir(in_frames_dir)):
+        in_fpath = os.path.join(in_frames_dir, frame_fname)
+        out_fpath = os.path.join(out_frames_dir, frame_fname)
+        frame_tracks  track_data.loc[track_data.frame_filename == frame_fname]
+
+        if len(frame_tracks) == 0:
+            shutil.copy(in_fpath, out_fpath)
+        else:
+            img = cv2.imread(in_fpath)
+            draw_tracks_in_img(img, frame_tracks)
+            cv2.imwrite(out_fpath, img)
 
 
 # %% [markdown] id="XIgX5CS8FHU0"
@@ -908,7 +914,7 @@ detections, frame_id_to_filename = detect(
 with open(DETECTIONS_FPATH, 'wb') as fh:
     pickle.dump(
         {
-            'detections': detections, 
+            'detections': detections,
             'frame_id_to_filename': frame_id_to_filename,
         },
         fh,
