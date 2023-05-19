@@ -793,7 +793,7 @@ def draw_tracks_in_img(img, frame_tracks: pd.DataFrame) -> None:
     font_scale = 1
     font_thickness = 1
 
-    for row in frame_tracks:
+    for row in frame_tracks.itertuples():
         # Some detections have no track.  Do not show them on the
         # video.
         if row.track_id == UNKNOWN_TRACK_ID_MARKER:
@@ -853,7 +853,7 @@ def make_frames_with_tracks(
     for frame_fname in sorted(os.listdir(in_frames_dir)):
         in_fpath = os.path.join(in_frames_dir, frame_fname)
         out_fpath = os.path.join(out_frames_dir, frame_fname)
-        frame_tracks  track_data.loc[track_data.frame_filename == frame_fname]
+        frame_tracks = track_data.loc[track_data.frame_filename == frame_fname]
 
         if len(frame_tracks) == 0:
             shutil.copy(in_fpath, out_fpath)
