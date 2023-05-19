@@ -499,6 +499,7 @@ def detect(
     # Go through frame list
     for frame_index, frame_fpath in enumerate(video_frames):
         frame_id = str(frame_index)  # XXX: Why?  Why are we not using the int?
+        frame_id_to_filename[frame_id] = frame_fpath
 
         if frame_index % 1000 == 0:
             _logger.info(
@@ -545,11 +546,6 @@ def detect(
                     min(float(pt[3]), img.shape[0]),
                 )
                 if coords[2] - coords[0] >= 1 and coords[3] - coords[1] >= 1:
-                    if pred_num == 0:
-                        # We found at least one prediction, so add the
-                        # image to the filename dict.
-                        frame_id_to_filename[frame_id] = frame_fpath
-
                     # XXX: original code had the option to load
                     # face_id_score from a previous run but this makes
                     # very little sense now?
@@ -675,9 +671,8 @@ def track(
     # We only use one shot, hence only shot_id 0.
     # XXX: Why are we using strings for int keys?
     shot_id = '0'
-    detections4svt = {shot_id: {}}
+    detections4svt = {shot_id: {x: {} for x in frame_id_to_filename.keys()}}
     for frame_id, detections_values in detections.items():
-        detections4svt[shot_id][frame_id] = {}
         for box_id, detection in detections_values.items():
             detections4svt[shot_id][frame_id][box_id] = [
                 detection.track_id,
