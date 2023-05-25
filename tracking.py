@@ -160,8 +160,7 @@ import sys
 import tempfile
 import warnings
 from collections import defaultdict
-from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, NamedTuple, Optional
 
 import cv2
 import google.colab.drive
@@ -435,20 +434,12 @@ def ffmpeg_video_from_frames_and_video(
     )
 
 
-# Ideally this would be a NamedTuple and values couldn't change.
-# However, in practice this is created in the detect phase and the
-# id_score is filled in during the identify phase.  So we use
-# dataclass and Optional.  Probably should be refactored.  But
-# then, SVT also wants to access the values by position so
-# dataclass brings its own problems.
-@dataclass
-class Detection:
+class Detection(NamedTuple):
     track_id: int
     x: float
     y: float
     w: float
     h: float
-    id_score: Optional[float]
 
 
 # TODO: why frame_id_to_filename only includes frames with detections?
@@ -538,10 +529,6 @@ def detect(
                     min(float(pt[3]), img.shape[0]),
                 )
                 if coords[2] - coords[0] >= 1 and coords[3] - coords[1] >= 1:
-                    # XXX: original code had the option to load
-                    # face_id_score from a previous run but this makes
-                    # very little sense now?
-
                     # Save detections to list ...
                     a_detection = Detection(
                         track_id=UNKNOWN_TRACK_ID_MARKER,
@@ -549,7 +536,6 @@ def detect(
                         y=coords[1],
                         w=coords[2] - coords[0],
                         h=coords[3] - coords[1],
-                        id_score=None,
                     )
 
                     frame_detections[frame_id][str(pred_num)] = a_detection
@@ -587,13 +573,9 @@ def track(
     detections4svt = {shot_id: {x: {} for x in frame_id_to_filename.keys()}}
     for frame_id, detections_values in detections.items():
         for box_id, detection in detections_values.items():
-            detections4svt[shot_id][frame_id][box_id] = [
-                detection.track_id,
-                detection.x,
-                detection.y,
-                detection.w,
-                detection.h,
-            ]
+            # `detection` is a named tuple but SVT will be modifying
+            # it to add track_id, so convert to list.
+            detections4svt[shot_id][frame_id][box_id] = list(detection)
 
     # redirect sys.stdout to a buffer to capture the prints() in the code below
     svt_stdout = io.StringIO()
