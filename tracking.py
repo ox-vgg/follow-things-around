@@ -177,9 +177,6 @@ import requests
 import torch
 import torch.backends.cudnn as cudnn
 import torch.cuda
-import torch.nn as nn
-import torchvision.models
-import torchvision.transforms
 from torch.autograd import Variable
 
 logging.basicConfig()
@@ -354,11 +351,6 @@ def local_path_for_model(path: str) -> str:
 
 DETECTION_MODEL_PATH = local_path_for_model(DETECTION_MODEL)
 TRACKING_MODEL_PATH = local_path_for_model(TRACKING_MODEL)
-
-
-face_id_normalize = torchvision.transforms.Normalize(
-    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-)
 
 
 logging2ffmpeg_loglevel = {
@@ -566,85 +558,6 @@ def detect(
 
     _logger.info('Finished detections')
     return frame_detections, frame_id_to_filename
-
-
-# TODO: not currently used because we need a notebook to fine face
-# identification first.
-def identify_faces(
-    detections: Dict[str, Dict[str, Detection]],
-    frame_id_to_filename: Dict[str, str],
-    face_id_model_fpath: str,
-):
-
-    face_id_model = torchvision.models.resnet18()
-    face_id_model.fc = nn.Linear(512, FACE_ID_CLASSES)
-    face_id_checkpoint = torch.load(face_id_model_fpath)
-
-    face_id_model = nn.DataParallel(face_id_model).cuda()
-    face_id_model.load_state_dict(face_id_checkpoint['state_dict'])
-
-    face_id_model.eval()
-    _logger.info('Finished loading model %s', face_id_model_fpath)
-    _logger.info('Starting face identification phase')
-
-    cudnn.benchmark = True
-
-    im_index_c = 0
-    for frame_id, frame_fpath in frame_id_to_filename.items():
-
-        if im_index_c % 1000 == 0:
-            _logger.info(
-                'Starting to process images %d to %d',
-                im_index_c,
-                min(im_index_c + 1000 - 1, len(frame_id_to_filename) - 1),
-            )
-        im_index_c += 1
-
-        # Acquire image (yes, again)
-        img = cv2.imread(frame_fpath)
-
-        for detection in detections[frame_id].values():
-            # Crop image to detection
-            x_end = detection.x + detection.w
-            y_end = detection.y + detection.h
-            crop_img = img[
-                int(detection.y) : int(y_end),
-                int(detection.x) : int(x_end),
-                :,
-            ]
-            # Prepare face image for classification
-            crop_img = cv2.resize(crop_img, (224, 224)).astype(np.float32)
-            zero_one_range_img = cv2.normalize(
-                crop_img,
-                None,
-                alpha=0,
-                beta=1,
-                norm_type=cv2.NORM_MINMAX,
-                dtype=cv2.CV_32F,
-            )
-            torch_permuted_img = torch.from_numpy(zero_one_range_img).permute(
-                2, 0, 1
-            )
-            crop_img_normalized = face_id_normalize(torch_permuted_img)
-            transformed = Variable(crop_img_normalized.unsqueeze(0))
-            # run face classifier
-            face_id_vector = face_id_model(transformed)
-
-            # Max's hack for bringing the results down to 0-1 range
-            face_id_vector = nn.Softmax()(face_id_vector)
-
-            # keep only relevant output + move to cpu + detach
-            face_id_vector_keep = (
-                face_id_vector[0][: len(FACE_IDENTIFICATION_MAP)]
-                .cpu()
-                .detach()
-                .numpy()
-            )
-
-            # save face_id_scores
-            detection.id_score = face_id_vector_keep
-
-    _logger.info('Finished identification')
 
 
 def track(
