@@ -74,6 +74,9 @@
 # - `detections.pkl` - the initial detections in [Python's pickle
 #   format](https://docs.python.org/3/library/pickle.html).
 #
+# - `tracks.pkl` - the detected tracks in [Python's pickle
+#   format](https://docs.python.org/3/library/pickle.html).
+#
 # - `results-via-project.json` - the final detections as a
 #   [VIA](https://www.robots.ox.ac.uk/~vgg/software/via/) project.  This
 #   requires the images in the `frames` directory.
@@ -300,6 +303,7 @@ logging.getLogger().setLevel(LOG_LEVEL)
 
 FRAMES_DIR = os.path.join(RESULTS_DIRECTORY, 'frames')
 DETECTIONS_FPATH = os.path.join(RESULTS_DIRECTORY, 'detections.pkl')
+TRACKS_PKL_FPATH = os.path.join(RESULTS_DIRECTORY, 'tracks.pkl')
 VIA_PROJECT_FPATH = os.path.join(RESULTS_DIRECTORY, 'results-via-project.json')
 CSV_FPATH = os.path.join(RESULTS_DIRECTORY, 'results.csv')
 TRACKS_VIDEO_FPATH = os.path.join(RESULTS_DIRECTORY, 'tracks.mp4')
@@ -769,13 +773,18 @@ _logger.info('Detection results loaded from \'%s\'', DETECTIONS_FPATH)
 # %% [markdown] id="FN5FGZxJFHU3"
 # ## 5 - Tracking step
 #
+# The final step in the pipeline is to track the detected chimpanzees
+# in the video.  At the end of this step, the tracking results will be
+# saved in a CSV file and as a
+# [VIA](https://www.robots.ox.ac.uk/~vgg/software/via/) project.
+#
+# If you have previously run the tracking step then you will have a
+# `tracks.pkl` file in the results directory.  If so, skip the
+# "tracking" cell and run the "load previous tracking results" cell
+# instead.
 
 # %% cellView="form" id="GodRuQQ4FHU3"
-#@markdown The final step in the pipeline is to track the detected
-#@markdown chimpanzees in the video.  At the end of this step, the
-#@markdown tracking results will be saved in a CSV file and as a
-#@markdown [VIA](https://www.robots.ox.ac.uk/~vgg/software/via/)
-#@markdown project.
+#@markdown ### 4.1 - Run tracking (option 1)
 
 svt_detections = track(
     detections,
@@ -797,6 +806,30 @@ svt_detections.export_via_project(
     config={'frame_img_dir': FRAMES_DIR, 'via_project_name': ''},
 )
 svt_detections.export_plain_csv(CSV_FPATH, {})
+
+with open(TRACKS_PKL_FPATH, 'wb') as fh:
+    pickle.dump(
+        {
+            'svt_detections': svt_detections,
+            'frame_id_to_filename': frame_id_to_filename,
+        },
+        fh,
+    )
+_logger.info('Tracking results saved to \'%s\'', DETECTIONS_FPATH)
+
+
+# %% cellView="form" id="_TQC37GrNTFw"
+#@markdown ### 4.2 - Load previous tracking results (option 2)
+
+with open(TRACKS_PKL_FPATH, 'rb') as fh:
+    loaded_tracks = pickle.load(fh)
+
+svt_detections = loaded_tracks['svt_detections']
+frame_id_to_filename = loaded_tracks['frame_id_to_filename']
+video_frames = list(frame_id_to_filename.values())
+
+_logger.info('Tracking results loaded from \'%s\'', TRACKS_PKL_FPATH)
+
 
 # %% [markdown] id="1XoTxVlsFHU3"
 # ## 6 - Visualise tracking results
