@@ -302,10 +302,10 @@ LOG_LEVEL = 'INFO'  #@param ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]
 logging.getLogger().setLevel(LOG_LEVEL)
 
 FRAMES_DIR = os.path.join(RESULTS_DIRECTORY, 'frames')
-DETECTIONS_FPATH = os.path.join(RESULTS_DIRECTORY, 'detections.pkl')
+DETECTIONS_PKL_FPATH = os.path.join(RESULTS_DIRECTORY, 'detections.pkl')
 TRACKS_PKL_FPATH = os.path.join(RESULTS_DIRECTORY, 'tracks.pkl')
-VIA_PROJECT_FPATH = os.path.join(RESULTS_DIRECTORY, 'results-via-project.json')
-CSV_FPATH = os.path.join(RESULTS_DIRECTORY, 'results.csv')
+RESULTS_VIA_FPATH = os.path.join(RESULTS_DIRECTORY, 'results-via-project.json')
+RESULTS_CSV_FPATH = os.path.join(RESULTS_DIRECTORY, 'results.csv')
 TRACKS_VIDEO_FPATH = os.path.join(RESULTS_DIRECTORY, 'tracks.mp4')
 
 
@@ -514,7 +514,7 @@ def track(
         'via_project_name': VIDEO_FILE,
     }
 
-    # We only use one shot, hence only shot_id 0.
+    # We expect videos to be of a single shot, hence only shot_id 0.
     # XXX: Why are we using strings for int keys?
     shot_id = '0'
     detections4svt = {shot_id: {x: {} for x in frame_id_to_filename.keys()}}
@@ -748,7 +748,7 @@ detections, frame_id_to_filename = detect(
     DETECTION_THRESHOLD,
 )
 
-with open(DETECTIONS_FPATH, 'wb') as fh:
+with open(DETECTIONS_PKL_FPATH, 'wb') as fh:
     pickle.dump(
         {
             'detections': detections,
@@ -756,19 +756,19 @@ with open(DETECTIONS_FPATH, 'wb') as fh:
         },
         fh,
     )
-_logger.info('Detection results saved to \'%s\'', DETECTIONS_FPATH)
+_logger.info('Detection results saved to \'%s\'', DETECTIONS_PKL_FPATH)
 
 # %% cellView="form" id="xHVc5I4EFHU2"
 #@markdown ### 4.2 - Load previous detection results (option 2)
 
-with open(DETECTIONS_FPATH, 'rb') as fh:
+with open(DETECTIONS_PKL_FPATH, 'rb') as fh:
     loaded_detections = pickle.load(fh)
 
 detections = loaded_detections['detections']
 frame_id_to_filename = loaded_detections['frame_id_to_filename']
 video_frames = list(frame_id_to_filename.values())
 
-_logger.info('Detection results loaded from \'%s\'', DETECTIONS_FPATH)
+_logger.info('Detection results loaded from \'%s\'', DETECTIONS_PKL_FPATH)
 
 # %% [markdown] id="FN5FGZxJFHU3"
 # ## 5 - Tracking step
@@ -786,7 +786,7 @@ _logger.info('Detection results loaded from \'%s\'', DETECTIONS_FPATH)
 # %% cellView="form" id="GodRuQQ4FHU3"
 #@markdown ### 4.1 - Run tracking (option 1)
 
-svt_detections = track(
+tracks = track(
     detections,
     frame_id_to_filename,
     TRACKING_MODEL_PATH,
@@ -796,26 +796,26 @@ svt_detections = track(
 # exported VIA project we want to use the filename only so that the
 # images can be found by setting the project "Default Path".  This
 # hack changes the filepath in the SVT internals.
-svt_detections.frame_id_to_filename_map = {
+tracks.frame_id_to_filename_map = {
     k: os.path.basename(v)
-    for k, v in svt_detections.frame_id_to_filename_map.items()
+    for k, v in tracks.frame_id_to_filename_map.items()
 }
 
-svt_detections.export_via_project(
-    VIA_PROJECT_FPATH,
+tracks.export_via_project(
+    RESULTS_VIA_FPATH,
     config={'frame_img_dir': FRAMES_DIR, 'via_project_name': ''},
 )
-svt_detections.export_plain_csv(CSV_FPATH, {})
+tracks.export_plain_csv(RESULTS_CSV_FPATH, {})
 
 with open(TRACKS_PKL_FPATH, 'wb') as fh:
     pickle.dump(
         {
-            'svt_detections': svt_detections,
+            'tracks': tracks,
             'frame_id_to_filename': frame_id_to_filename,
         },
         fh,
     )
-_logger.info('Tracking results saved to \'%s\'', DETECTIONS_FPATH)
+_logger.info('Tracking results saved to \'%s\'', TRACKS_PKL_FPATH)
 
 
 # %% cellView="form" id="_TQC37GrNTFw"
@@ -824,7 +824,7 @@ _logger.info('Tracking results saved to \'%s\'', DETECTIONS_FPATH)
 with open(TRACKS_PKL_FPATH, 'rb') as fh:
     loaded_tracks = pickle.load(fh)
 
-svt_detections = loaded_tracks['svt_detections']
+tracks = loaded_tracks['tracks']
 frame_id_to_filename = loaded_tracks['frame_id_to_filename']
 video_frames = list(frame_id_to_filename.values())
 
@@ -852,7 +852,7 @@ _logger.info('Tracking results loaded from \'%s\'', TRACKS_PKL_FPATH)
 #@markdown is released.  Expect a couple of seconds wait for the frame
 #@markdown to be updated.
 
-display_detections(frame_id_to_filename, svt_detections.detection_data['0'])
+display_detections(frame_id_to_filename, tracks.detection_data['0'])
 
 # %% [markdown] id="i5FjIafRC8te"
 # ### 6.2 - Visualise locally with VIA (option 2)
@@ -899,7 +899,7 @@ display_detections(frame_id_to_filename, svt_detections.detection_data['0'])
 
 with tempfile.TemporaryDirectory() as out_frames_dir:
     tmp_tracks_fpath = os.path.join(out_frames_dir, 'tracks.mp4')
-    make_frames_with_tracks(CSV_FPATH, FRAMES_DIR, out_frames_dir)
+    make_frames_with_tracks(RESULTS_CSV_FPATH, FRAMES_DIR, out_frames_dir)
     ffmpeg_video_from_frames_and_video(
         out_frames_dir, VIDEO_FILE, tmp_tracks_fpath
     )
