@@ -143,9 +143,8 @@ else:
 #
 
 # %% cellView="form" id="y3Nw3Km_FHUp"
-#@markdown
+#@markdown This step can take a few of minutes to finish.
 
-#^ this @markdown above is just so that we can set cellView to form
 
 import contextlib
 import glob
@@ -191,20 +190,13 @@ import svt.detections
 from svt.siamrpn_tracker import siamrpn_tracker
 
 
-## The ssd.pytorch "package" (cloned into ssd_pytorch so it can imported)
-# When we import stuff from ssd.pytorch, it import data.coco which reads a
-# `HOME/data/coco/coco_labels.txt` (even though we don't need it).  We create
-# an empty file so it doesn't fail to import.  We also need to add `HOME` to
-# `data/config.py` or it will try to read from `/root`.  See
-# https://github.com/amdegroot/ssd.pytorch/issues/571
-# !git clone --quiet \
-#   --single-branch --branch vgg-colab \
-#   https://github.com/carandraug/ssd.pytorch.git ssd_pytorch/
-# !echo 'HOME = "ssd_pytorch"' >> ssd_pytorch/data/config.py
-# !mkdir ssd_pytorch/data/coco
-# !touch ssd_pytorch/data/coco/coco_labels.txt
-from ssd_pytorch.data import base_transform
-from ssd_pytorch.ssd import build_ssd
+# Despite the `--quiet` flag, it still prints out a mysterious
+# "Preparing metadata (setup.py)" message so just redirect stdout.
+# Important messages should go to stderr anyway.
+# !pip install --quiet git+https://github.com/facebookresearch/detectron2.git > /dev/null
+import detectron2.config
+import detectron2.engine
+import detectron2.model_zoo
 
 # %% [markdown] id="chRTgjgMCJdd"
 # ### 2.3 - Mount Google Drive
@@ -263,13 +255,10 @@ if not os.path.isdir(RESULTS_DIRECTORY):
 
 #@markdown A detection model is required.  You can either train
 #@markdown your own model, or you can use one of our pre-trained
-#@markdown models for
-#@markdown [face](https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/face-model-ssd300_CFbootstrap_85000.pth)
-#@markdown or
-#@markdown [body](https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/body-model-ssd300_BFbootstrapBissau4p5k_prebossou_best.pth).
-#@markdown Either way, you will need to upload the model to your
-#@markdown Google Drive and specify its path here.
-DETECTION_MODEL = 'https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/face-model-ssd300_CFbootstrap_85000.pth'  #@param {type: "string"}
+#@markdown models.  This variable is the URL, or file path, for a
+#@markdown detectron2 model configuration (the URI and file path for
+#@markdown the model weights are specified in the config file).
+DETECTION_MODEL_CONFIG = 'https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-CFbootstrap.yaml'  #@param {type: "string"}
 
 #@markdown When the model detects a face or body, that detection is
 #@markdown made with a confidence score.  Detections with a confidence
@@ -277,7 +266,7 @@ DETECTION_MODEL = 'https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/fa
 #@markdown threshold too high, you may loose some tracks but if you
 #@markdown set it too low you may gain false tracks that need to be
 #@markdown removed later.
-DETECTION_THRESHOLD = 0.37  #@param {type: "slider", min: 0.0, max: 1.0, step: 0.01}
+DETECTION_THRESHOLD = 0.6  #@param {type: "slider", min: 0.0, max: 1.0, step: 0.01}
 
 # %% cellView="form" id="nmuWC94sFHUw"
 #@markdown #### 2.5.2 - Chimpanzee tracking
@@ -348,7 +337,7 @@ def local_path_for_model(path: str) -> str:
         return path
 
 
-DETECTION_MODEL_PATH = local_path_for_model(DETECTION_MODEL)
+DETECTION_MODEL_CONFIG_PATH = local_path_for_model(DETECTION_MODEL_CONFIG)
 TRACKING_MODEL_PATH = local_path_for_model(TRACKING_MODEL)
 
 
@@ -445,13 +434,13 @@ class Detection(NamedTuple):
 # TODO: why frame_id_to_filename only includes frames with detections?
 # Can't we just check on the the list of detections that there's none?
 #
-# TODO: why do we convert the frame number to a string fo rkeys in the
+# TODO: why do we convert the frame number to a string for keys in the
 # dict?  Why not just use an int?
 #
 # TODO: why return frame_id_to_filename (can't that be deduced?)
 def detect(
     video_frames: List[str],
-    detection_model_path: str,
+    detection_model_config_path: str,
     visual_threshold: float,
 ):
     if visual_threshold < 0.0 or visual_threshold > 1.0:
@@ -459,23 +448,15 @@ def detect(
             'visual_threshold needs to be a number between 0.0 and 1.0'
         )
 
-    num_classes = 2  # +1 background
-    net = build_ssd('test', 300, num_classes)
-    net.load_state_dict(
-        torch.load(detection_model_path, map_location=DEFAULT_DEVICE)
-    )
-    net.eval()
-    net = net.to(DEFAULT_DEVICE)
+    d2_cfg = detectron2.config.get_cfg()
+    d2_cfg.merge_from_file(detection_model_config_path)
+    d2_cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = visual_threshold
 
-    # XXX: Can't we do the benchmark just once and then save it?
-    if USE_GPU:
-        cudnn.benchmark = True
-
-    _logger.info('Finished loading model %s', detection_model_path)
+    predictor = detectron2.engine.DefaultPredictor(d2_cfg)
+    _logger.info('Finished loading model %s', detection_model_config_path)
 
     _logger.info('Starting detection phase')
 
-    # init this important variables
     frame_id_to_filename: Dict[str, str] = {}
     frame_detections: Dict[str, Dict[str, Detection]] = defaultdict(dict)
 
@@ -493,54 +474,16 @@ def detect(
 
         # Acquire image
         img = cv2.imread(frame_fpath)
+        outputs = predictor(img)
 
-        # Apply transforms to the image
-        transformed = base_transform(img, net.size, [104, 117, 123])
-        transformed = torch.from_numpy(transformed).permute(2, 0, 1)
-        transformed = Variable(transformed.unsqueeze(0))
-        transformed = transformed.to(DEFAULT_DEVICE)
-
-        # Silence UserWarnings from ssd_pytorch/layers/box_utils.py "An output
-        # with one or more elements was resized since it had shape [X], which
-        # does not match the required output shape [Y]. This behavior is
-        # deprecated, and in a future PyTorch release outputs will not be
-        # resized unless they have zero elements. You can explicitly reuse an
-        # out tensor t by resizing it, inplace, to zero elements with
-        # t.resize_(0)."
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            net_out = net(transformed)  # run detector
-        net_detections = net_out.data
-
-        # Scale each detection back up to the image
-        scale = torch.Tensor(
-            [img.shape[1], img.shape[0], img.shape[1], img.shape[0]]
-        )
-        pred_num = 0
-        for i in range(net_detections.size(1)):
-            j = 0
-            while net_detections[0, i, j, 0] >= visual_threshold:
-                score = net_detections[0, i, j, 0]
-                pt = (net_detections[0, i, j, 1:] * scale).cpu().numpy()
-                coords = (
-                    max(float(pt[0]), 0.0),
-                    max(float(pt[1]), 0.0),
-                    min(float(pt[2]), img.shape[1]),
-                    min(float(pt[3]), img.shape[0]),
-                )
-                if coords[2] - coords[0] >= 1 and coords[3] - coords[1] >= 1:
-                    # Save detections to list ...
-                    a_detection = Detection(
-                        track_id=UNKNOWN_TRACK_ID_MARKER,
-                        x=coords[0],
-                        y=coords[1],
-                        w=coords[2] - coords[0],
-                        h=coords[3] - coords[1],
-                    )
-
-                    frame_detections[frame_id][str(pred_num)] = a_detection
-                    pred_num += 1
-                j += 1
+        for i, bbox in enumerate(outputs['instances'].get('pred_boxes')):
+            frame_detections[frame_id][str(i)] = Detection(
+                track_id=UNKNOWN_TRACK_ID_MARKER,
+                x=float(bbox[0]),
+                y=float(bbox[1]),
+                w=float(bbox[2] - bbox[0]),
+                h=float(bbox[3] - bbox[1]),
+            )
 
     _logger.info('Finished detections')
     return frame_detections, frame_id_to_filename
@@ -797,7 +740,7 @@ if len(video_frames) == 0:
 
 detections, frame_id_to_filename = detect(
     video_frames,
-    DETECTION_MODEL_PATH,
+    DETECTION_MODEL_CONFIG_PATH,
     DETECTION_THRESHOLD,
 )
 
