@@ -228,6 +228,12 @@ google.colab.drive.mount('/content/drive')
 
 VIDEO_FILE = ''  #@param {type:"string"}
 RESULTS_DIRECTORY = ''  #@param {type:"string"}
+THING_TO_TRACK = 'Chimpanzee faces'  #@param ["Chimpanzee faces", "Chimpanzee bodies"]
+
+THING_TO_MODEL_CONFIG = {
+    "Chimpanzee faces" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-CFbootstrap.yaml",
+    "Chimpanzee bodies" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-imdb_5k_sup.yaml",
+}
 
 if not VIDEO_FILE:
     raise Exception('VIDEO_FILE is empty, you must set it.')
@@ -238,6 +244,11 @@ if not os.path.isfile(VIDEO_FILE):
 if not os.path.isdir(RESULTS_DIRECTORY):
     raise Exception(
         'The RESULTS_DIRECTORY \'%s\' does not exist' % RESULTS_DIRECTORY
+    )
+if THING_TO_TRACK not in THING_TO_MODEL_CONFIG:
+    raise Exception(
+        'THING_TO_TRACK \'%s\' has no pre-configuration \'%s\''
+        % (THING_TO_TRACK, list(THING_TO_MODEL_CONFIG.keys()))
     )
 
 # %% [markdown] id="7c1gbeVrFHUu"
@@ -261,7 +272,14 @@ if not os.path.isdir(RESULTS_DIRECTORY):
 #@markdown models.  This variable is the URL, or file path, for a
 #@markdown detectron2 model configuration (the URI and file path for
 #@markdown the model weights are specified in the config file).
-DETECTION_MODEL_CONFIG = 'https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-CFbootstrap.yaml'  #@param {type: "string"}
+#@markdown
+
+#@markdown Leave this empty to use the pre-configured model to detect
+#@markdown the `THING_TO_TRACK` choosen in Section 2.4.
+
+DETECTION_MODEL_CONFIG = ''  #@param {type: "string"}
+if not DETECTION_MODEL_CONFIG:
+    DETECTION_MODEL_CONFIG = THING_TO_MODEL_CONFIG[THING_TO_TRACK]
 
 #@markdown When the model detects a face or body, that detection is
 #@markdown made with a confidence score.  Detections with a confidence
@@ -282,7 +300,7 @@ DETECTION_THRESHOLD = 0.6  #@param {type: "slider", min: 0.0, max: 1.0, step: 0.
 #@markdown You will also specify a path in your Google Drive.
 TRACKING_MODEL = 'https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/tracking-model-20181031_e45.pth'  #@param {type: "string"}
 
-MATCH_OVERLAP_THRESHOLD = 0.6 #@param {type:"slider", min:0.0, max:1.0, step:0.01}
+MATCH_OVERLAP_THRESHOLD = 0.6  #@param {type:"slider", min:0.0, max:1.0, step:0.01}
 
 UNKNOWN_TRACK_ID_MARKER = -1
 
