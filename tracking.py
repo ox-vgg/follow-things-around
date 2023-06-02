@@ -531,6 +531,7 @@ def detect(
     d2_cfg = detectron2.config.get_cfg()
     d2_cfg.merge_from_file(detection_model_config_path)
     d2_cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = visual_threshold
+    d2_cfg.MODEL.DEVICE = DEFAULT_DEVICE
 
     predictor = detectron2.engine.DefaultPredictor(d2_cfg)
     _logger.info('Finished loading model %s', detection_model_config_path)
