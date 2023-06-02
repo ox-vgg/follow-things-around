@@ -228,7 +228,7 @@ google.colab.drive.mount('/content/drive')
 
 VIDEO_FILE = ''  #@param {type:"string"}
 RESULTS_DIRECTORY = ''  #@param {type:"string"}
-THING_TO_TRACK = 'Chimpanzee faces'  #@param ["Chimpanzee faces", "Chimpanzee bodies"]
+THING_TO_TRACK = 'Chimpanzee faces'  #@param ["Chimpanzee faces", "Chimpanzee bodies", "Birds", "Cats", "Dogs", "Horses", "Sheep", "Cows", "Elephants", "Bears", "Zebras", "Giraffes"]
 
 THING_TO_MODEL_CONFIG = {
     "Chimpanzee faces" : {
@@ -238,6 +238,46 @@ THING_TO_MODEL_CONFIG = {
     "Chimpanzee bodies" : {
         "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-imdb_5k_sup.yaml",
         "class-idx" : 0,
+    },
+    "Birds" : {
+        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "class-idx" : 14,
+    },
+    "Cats" : {
+        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "class-idx" : 15,
+    },
+    "Dogs" : {
+        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "class-idx" : 16,
+    },
+    "Horses" : {
+        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "class-idx" : 17,
+    },
+    "Sheep" : {
+        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "class-idx" : 18,
+    },
+    "Cows" : {
+        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "class-idx" : 19,
+    },
+    "Elephants" : {
+        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "class-idx" : 20,
+    },
+    "Bears" : {
+        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "class-idx" : 21,
+    },
+    "Zebras" : {
+        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "class-idx" : 22,
+    },
+    "Giraffes" : {
+        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "class-idx" : 23,
     },
 }
 
