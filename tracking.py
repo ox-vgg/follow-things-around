@@ -231,8 +231,14 @@ RESULTS_DIRECTORY = ''  #@param {type:"string"}
 THING_TO_TRACK = 'Chimpanzee faces'  #@param ["Chimpanzee faces", "Chimpanzee bodies"]
 
 THING_TO_MODEL_CONFIG = {
-    "Chimpanzee faces" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-CFbootstrap.yaml",
-    "Chimpanzee bodies" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-imdb_5k_sup.yaml",
+    "Chimpanzee faces" : {
+        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-CFbootstrap.yaml",
+        "class-idx" : 0,
+    },
+    "Chimpanzee bodies" : {
+        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-imdb_5k_sup.yaml",
+        "class-idx" : 0,
+    },
 }
 
 if not VIDEO_FILE:
@@ -278,8 +284,10 @@ if THING_TO_TRACK not in THING_TO_MODEL_CONFIG:
 #@markdown the `THING_TO_TRACK` choosen in Section 2.4.
 
 DETECTION_MODEL_CONFIG = ''  #@param {type: "string"}
+DETECTION_CLASS_IDX = 0
 if not DETECTION_MODEL_CONFIG:
-    DETECTION_MODEL_CONFIG = THING_TO_MODEL_CONFIG[THING_TO_TRACK]
+    DETECTION_MODEL_CONFIG = THING_TO_MODEL_CONFIG[THING_TO_TRACK]["config-url"]
+    DETECTION_CLASS_IDX = THING_TO_MODEL_CONFIG[THING_TO_TRACK]["class-idx"]
 
 #@markdown When the model detects a face or body, that detection is
 #@markdown made with a confidence score.  Detections with a confidence
@@ -463,6 +471,7 @@ class Detection(NamedTuple):
 def detect(
     video_frames: List[str],
     detection_model_config_path: str,
+    class_idx: int,
     visual_threshold: float,
 ):
     if visual_threshold < 0.0 or visual_threshold > 1.0:
@@ -497,8 +506,9 @@ def detect(
         # Acquire image
         img = cv2.imread(frame_fpath)
         outputs = predictor(img)
+        bboxes = outputs['instances'].pred_boxes[outputs['instances'].pred_classes == class_idx]
 
-        for i, bbox in enumerate(outputs['instances'].get('pred_boxes')):
+        for i, bbox in enumerate(bboxes):
             frame_detections[frame_id][str(i)] = Detection(
                 track_id=UNKNOWN_TRACK_ID_MARKER,
                 x=float(bbox[0]),
@@ -763,6 +773,7 @@ if len(video_frames) == 0:
 detections, frame_id_to_filename = detect(
     video_frames,
     DETECTION_MODEL_CONFIG_PATH,
+    DETECTION_CLASS_IDX,
     DETECTION_THRESHOLD,
 )
 
