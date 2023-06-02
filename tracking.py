@@ -130,16 +130,26 @@
 #@markdown from the "Hardware Accelerator" menu.  Once you change it,
 #@markdown you need to run this cell again.
 
-# gpu_info = !nvidia-smi --list-gpus
-gpu_info = '\n'.join(gpu_info)
-if gpu_info.find('failed') >= 0:
-    USE_GPU = False
-    print('You are NOT connected to a GPU.  This will run very slow.')
-    print('Consider reconnecting to a runtime with GPU access.')
-else:
+import torch.cuda
+
+if torch.cuda.is_available():
     USE_GPU = True
-    print('You are connected to the following GPUs:')
-    print(gpu_info)
+    print("You are using this GPU:")
+    print(
+        "GPU %d: %s (%d GB)"
+        % (
+            torch.cuda.current_device(),
+            torch.cuda.get_device_name(),
+            torch.cuda.get_device_properties(
+                torch.cuda.current_device()
+            ).total_memory
+            * 1e-9,
+        )
+    )
+else:
+    USE_GPU = False
+    print("You are NOT connected to a GPU.  This will run very slow.")
+    print("Consider reconnecting to a runtime with GPU access.")
 
 # %% [markdown] id="0jKiMdsdBpQO"
 # ### 2.2 - Install and load dependencies
@@ -177,7 +187,6 @@ import plotly.express
 import requests
 import torch
 import torch.backends.cudnn as cudnn
-import torch.cuda
 from torch.autograd import Variable
 
 logging.basicConfig()
