@@ -1,5 +1,5 @@
 # %% [markdown] id="AR4oetmCFHUa"
-# # VGG Chimpanzee Tracking
+# # VGG Follow Things Around
 #
 # This project provides an interface to track chimpanzees in the wild.
 # It will detect the chimpanzees in video files.  It is based in the
@@ -21,7 +21,7 @@
 # chimpanzees in the wild and was designed to run in [Google
 # Colab](https://colab.research.google.com/).  If you are not reading
 # this notebook in Google Colab, click
-# [here](https://colab.research.google.com/github/ox-vgg/chimpanzee-tracking/blob/main/tracking.ipynb).
+# [here](https://colab.research.google.com/github/ox-vgg/follow-things-around/blob/main/tracking.ipynb).
 #
 
 # %% [markdown] id="-tfDPTizFHUi"
@@ -492,7 +492,7 @@ def ffmpeg_video_from_frames_and_video(
             '-pattern_type', 'glob',
             '-i', os.path.join(frames_dir, '*.jpg'),
             '-i', in_video_fpath,
-            '-c:a', 'aac',  # https://github.com/ox-vgg/chimpanzee-tracking/issues/1
+            '-c:a', 'aac',  # https://github.com/ox-vgg/follow-things-around/issues/1
             '-c:v', 'libx264',
             '-map', '0:v:0',  # use video from input 0 / stream 0
             '-map', '1:a:0',  # use audio from input 1 / stream 0
