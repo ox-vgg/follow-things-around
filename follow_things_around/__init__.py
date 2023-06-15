@@ -12,9 +12,6 @@
 ## implied.  See the License for the specific language governing
 ## permissions and limitations under the License.
 
-
-import contextlib
-import io
 import logging
 import os
 import os.path
@@ -246,18 +243,13 @@ def track(
             # it to add track_id, so convert to list.
             detections4svt[shot_id][frame_id][box_id] = list(detection)
 
-    # redirect sys.stdout to a buffer to capture the prints() in the code below
-    svt_stdout = io.StringIO()
-    with contextlib.redirect_stdout(svt_stdout):
-        tracker = siamrpn_tracker(
-            model_path=tracking_model_path, config=tracker_config
-        )
+    tracker = siamrpn_tracker(
+        model_path=tracking_model_path, config=tracker_config
+    )
+    svt_detections = svt.detections.detections()
+    svt_detections.read(detections4svt, frame_id_to_filename)
+    svt_detections.match(tracker=tracker, config=detections_match_config)
 
-        svt_detections = svt.detections.detections()
-        svt_detections.read(detections4svt, frame_id_to_filename)
-        svt_detections.match(tracker=tracker, config=detections_match_config)
-
-    _logger.info(svt_stdout.getvalue())
     _logger.info("Finished tracking")
     return svt_detections
 
