@@ -221,7 +221,6 @@ def track(
 
     tracker_config = {
         "gpu_id": 0 if USE_GPU else -1,
-        "verbose": True,
         "preload_model": True,
     }
 
@@ -229,7 +228,6 @@ def track(
         "match_overlap_threshold": MATCH_OVERLAP_THRESHOLD,
         "UNKNOWN_TRACK_ID_MARKER": UNKNOWN_TRACK_ID_MARKER,
         "frame_img_dir": "",
-        "verbose": True,
         "via_project_name": VIDEO_FILE,
     }
 
