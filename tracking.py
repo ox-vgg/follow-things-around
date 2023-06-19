@@ -353,7 +353,9 @@ DETECTION_THRESHOLD = 0.6  #@param {type: "slider", min: 0.0, max: 1.0, step: 0.
 #@markdown You will also specify a path in your Google Drive.
 TRACKING_MODEL = 'https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/tracking-model-20181031_e45.pth'  #@param {type: "string"}
 
-MATCH_OVERLAP_THRESHOLD = 0.6  #@param {type:"slider", min:0.0, max:1.0, step:0.01}
+MATCH_OVERLAP_THRESHOLD = 0.2  #@param {type:"slider", min:0.0, max:1.0, step:0.01}
+
+NONMATCH_TRACKING_THRESHOLD = 0.9  #@param {type:"slider", min:0.0, max:1.0, step:0.01}
 
 UNKNOWN_TRACK_ID_MARKER = -1
 
@@ -419,6 +421,7 @@ TRACKING_MODEL_PATH = local_path_for_model(TRACKING_MODEL)
 follow_things_around.DEFAULT_DEVICE = DEFAULT_DEVICE
 follow_things_around.FRAMES_DIR = FRAMES_DIR
 follow_things_around.MATCH_OVERLAP_THRESHOLD = MATCH_OVERLAP_THRESHOLD
+follow_things_around.NONMATCH_TRACKING_THRESHOLD = NONMATCH_TRACKING_THRESHOLD
 follow_things_around.UNKNOWN_TRACK_ID_MARKER = UNKNOWN_TRACK_ID_MARKER
 follow_things_around.USE_GPU = USE_GPU
 follow_things_around.VIDEO_FILE = VIDEO_FILE

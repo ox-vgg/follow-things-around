@@ -30,8 +30,9 @@ import matplotlib.cm
 import pandas as pd
 import PIL.Image
 import plotly.express
-import svt.detections
 from svt.siamrpn_tracker import siamrpn_tracker
+
+from follow_things_around import svt_patch
 
 
 _logger = logging.getLogger()
@@ -45,7 +46,9 @@ UNKNOWN_TRACK_ID_MARKER: int = -1
 
 FFMPEG_LOG_LEVEL: str = "info"
 
-MATCH_OVERLAP_THRESHOLD: float = 0.6
+MATCH_OVERLAP_THRESHOLD: float = 0.2
+
+NONMATCH_TRACKING_THRESHOLD: float = 0.9
 
 VIDEO_FILE: str = ""
 
@@ -225,6 +228,7 @@ def track(
     }
 
     detections_match_config = {
+        "nonmatch_tracking_threshold": NONMATCH_TRACKING_THRESHOLD,
         "match_overlap_threshold": MATCH_OVERLAP_THRESHOLD,
         "UNKNOWN_TRACK_ID_MARKER": UNKNOWN_TRACK_ID_MARKER,
         "frame_img_dir": "",
@@ -244,7 +248,7 @@ def track(
     tracker = siamrpn_tracker(
         model_path=tracking_model_path, config=tracker_config
     )
-    svt_detections = svt.detections.detections()
+    svt_detections = svt_patch.detections()
     svt_detections.read(detections4svt, frame_id_to_filename)
     svt_detections.match(tracker=tracker, config=detections_match_config)
 
