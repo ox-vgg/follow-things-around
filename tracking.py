@@ -521,7 +521,7 @@ _logger.info('Detection results loaded from \'%s\'', DETECTIONS_PKL_FPATH)
 # instead.
 
 # %% cellView="form" id="GodRuQQ4FHU3"
-#@markdown ### 4.1 - Run tracking (option 1)
+#@markdown ### 5.1 - Run tracking (option 1)
 
 tracks = track(
     detections,
@@ -556,7 +556,7 @@ _logger.info('Tracking results saved to \'%s\'', TRACKS_PKL_FPATH)
 
 
 # %% cellView="form" id="_TQC37GrNTFw"
-#@markdown ### 4.2 - Load previous tracking results (option 2)
+#@markdown ### 5.2 - Load previous tracking results (option 2)
 
 with open(TRACKS_PKL_FPATH, 'rb') as fh:
     loaded_tracks = pickle.load(fh)
