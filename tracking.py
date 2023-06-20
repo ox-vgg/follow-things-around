@@ -1,24 +1,25 @@
 # %% [markdown] id="AR4oetmCFHUa"
 # # VGG Follow Things Around
 #
-# This project provides an interface to track chimpanzees in the wild.
-# It will detect the chimpanzees in video files.  It is based in the
-# following projects:
+# Follow Things Around is a program to detect and track multiple
+# objects in videos.  We currently support the tracking of chimpanzee
+# faces, birds, cats, dogs, horses, sheep, cows, elephants, bears,
+# zebras, and giraffes and are expanding the list of things that it
+# can track.  Please contact us at if you are interested in tracking
+# other things.
 #
-# - [Count, Crop and Recognise: Fine-Grained Recognition in the
-#   Wild](https://www.robots.ox.ac.uk/~vgg/research/ccr/) -
-#   [[paper]](http://www.robots.ox.ac.uk/~vgg/publications/2019/Bain19/bain19.pdf)
-#
-# - [Chimpanzee face recognition from videos in the wild using deep
-#   learning](https://www.robots.ox.ac.uk/~vgg/research/ChimpanzeeFaces/) -
-#   [[paper]](https://advances.sciencemag.org/content/advances/5/9/eaaw0736.full.pdf)
-#
+# Follow Things Around works by performing a two-step approach named
+# "tracking by detection".  First, it detect the "things" of interest
+# in all frames of a video and then, it tracks those detections
+# merging them into individual tracks and filling in gaps from the
+# detector.
 
 # %% [markdown] id="O3vImnLxFHUf"
 # ## 1 - Read Me First
 #
-# This project is a [Jupyter](https://jupyter.org/) notebook to track
-# chimpanzees in the wild and was designed to run in [Google
+# This project is a [Jupyter](https://jupyter.org/) notebook to
+# perform tracking by detection of multiple objects in videos and was
+# designed to run in [Google
 # Colab](https://colab.research.google.com/).  If you are not reading
 # this notebook in Google Colab, click
 # [here](https://colab.research.google.com/github/ox-vgg/follow-things-around/blob/main/tracking.ipynb).
@@ -57,19 +58,21 @@
 # ### 1.3 - Testing this notebook
 #
 # We recommend you first test this notebook with a short video, less
-# than 20 seconds long.  Try our own sample video (download it
-# [here](https://thor.robots.ox.ac.uk/software/chimpanzee-tracking/test-data/19-mini.mp4)),
-# and then a video fragment of your own videos.
+# than 20 seconds long.  First, try our own sample video to track
+# chimpanzee faces (download it
+# [here](https://thor.robots.ox.ac.uk/software/chimpanzee-tracking/test-data/19-mini.mp4)).
+# Then try a video fragment of your own video.  Finally, run it on
+# your full video.
 
 # %% [markdown] id="iXk_VjsyDmtS"
 # ### 1.4 - Results files
 #
-# This notebook will save all the results in a single directory.  It
-# will generate the following files:
+# This notebook will save all results for a single video in one
+# directory.  It will generate the following files:
 #
 # - `frames` - a directory with the individual video frames.  You may
 #   want to delete them after validating the results.  They take up a
-#   lot of space and can be regenerated later
+#   lot of space and can be regenerated later.
 #
 # - `detections.pkl` - the initial detections in [Python's pickle
 #   format](https://docs.python.org/3/library/pickle.html).
@@ -85,8 +88,9 @@
 #
 # - `tracks.mp4` - video with tracks (see Section 6).
 #
-# Note that none of those files includes the video filename.  As such,
-# our recommendation is to create a results directory for each video.
+# Note that none of those files includes the input video filename.
+# Our recommendation is to create separate results directory for each
+# video.
 #
 
 # %% [markdown] id="vuE9bu6GDpOv"
@@ -107,11 +111,15 @@
 # ### 1.6 - Moving forward
 #
 # You can run this notebook on Google Colab but if you have a large
-# collection of videos or if your videos are particularly long, you may
-# use up all of your Colab resources.  It may be worth running this on
-# your own computers.  Contact us if you need help to do that.
-# Alternatively, you purchase additional "compute units" with [Google
-# Colab Plans](https://colab.research.google.com/signup).
+# collection of videos or if your videos are particularly long or have
+# a high number of objects to track, you may end up using up all of
+# your free Colab resources.
+#
+# Once you've tested Follow Things Around with a few of your videos,
+# it may be worth running this on your own computers.  Contact us if
+# you need help to do that.  Alternatively, you can purchase
+# additional "compute units" with [Google Colab
+# Plans](https://colab.research.google.com/signup).
 #
 
 # %% [markdown] id="wWhspjzoFHUl"
@@ -170,13 +178,16 @@ else:
 
 # The SVT package
 # https://www.robots.ox.ac.uk/~vgg/projects/seebibyte/software/svt/
+print("Installing SVT")
 # !pip install --quiet git+https://gitlab.com/vgg/svt/ > /dev/null
 
 # The Detectron2 package
 # https://github.com/facebookresearch/detectron2/
+print("Installing detectron2 (this will take a few minutes to finish)")
 # !pip install --quiet git+https://github.com/facebookresearch/detectron2.git > /dev/null
 
 # Finally, Follow-Things-Around
+print("Installing Follow-Things-Around")
 # !pip install --quiet git+https://github.com/ox-vgg/follow-things-around.git
 
 import glob
@@ -220,19 +231,20 @@ _logger = logging.getLogger()
 
 google.colab.drive.mount('/content/drive')
 
-# %% [markdown] id="lb_oICb3CPpC"
-# ### 2.4 - Video file and results folder
+# %% [markdown] id="Elhia5LHRFZf"
+# ### 2.4 - Select "thing" to track
 #
 
-# %% cellView="form" id="Gk90XC-8FHUs"
-#@markdown To find the correct path, open the "Files" menu in the left
-#@markdown sidebar.  The `drive` directory contains your Google Drive
-#@markdown files.  Navigate the files, right click on the wanted file
-#@markdown or directory, and select "Copy path".  Then paste the path
-#@markdown in this form.  Do not forget to then "run" this cell.
+# %% cellView="form" id="WFYckNS4Ztud"
+#@markdown A model trained on the "thing" of interest is required.  We
+#@markdown currently have models for these things but it is possible
+#@markdown to train new ones.  Please contact us if you require a
+#@markdown detector for something else or if you require to fine-tune
+#@markdown them.
+#@markdown
+#@markdown Do not forget to "run" this cell after making your
+#@markdown selection.
 
-VIDEO_FILE = ''  #@param {type:"string"}
-RESULTS_DIRECTORY = ''  #@param {type:"string"}
 THING_TO_TRACK = 'Chimpanzee faces'  #@param ["Chimpanzee faces", "Chimpanzee bodies", "Birds", "Cats", "Dogs", "Horses", "Sheep", "Cows", "Elephants", "Bears", "Zebras", "Giraffes"]
 
 THING_TO_MODEL_CONFIG = {
@@ -286,6 +298,27 @@ THING_TO_MODEL_CONFIG = {
     },
 }
 
+if THING_TO_TRACK not in THING_TO_MODEL_CONFIG:
+    raise Exception(
+        'THING_TO_TRACK \'%s\' has no pre-configuration \'%s\''
+        % (THING_TO_TRACK, list(THING_TO_MODEL_CONFIG.keys()))
+    )
+
+
+# %% [markdown] id="lb_oICb3CPpC"
+# ### 2.5 - Video file and results folder
+#
+
+# %% cellView="form" id="Gk90XC-8FHUs"
+#@markdown To find the correct path, open the "Files" menu in the left
+#@markdown sidebar.  The `drive` directory contains your Google Drive
+#@markdown files.  Navigate the files, right click on the wanted file
+#@markdown or directory, and select "Copy path".  Then paste the path
+#@markdown in this form.  Do not forget to then "run" this cell.
+
+VIDEO_FILE = ''  #@param {type:"string"}
+RESULTS_DIRECTORY = ''  #@param {type:"string"}
+
 if not VIDEO_FILE:
     raise Exception('VIDEO_FILE is empty, you must set it.')
 if not RESULTS_DIRECTORY:
@@ -296,14 +329,10 @@ if not os.path.isdir(RESULTS_DIRECTORY):
     raise Exception(
         'The RESULTS_DIRECTORY \'%s\' does not exist' % RESULTS_DIRECTORY
     )
-if THING_TO_TRACK not in THING_TO_MODEL_CONFIG:
-    raise Exception(
-        'THING_TO_TRACK \'%s\' has no pre-configuration \'%s\''
-        % (THING_TO_TRACK, list(THING_TO_MODEL_CONFIG.keys()))
-    )
+
 
 # %% [markdown] id="7c1gbeVrFHUu"
-# ### 2.5 - Advanced options
+# ### 2.6 - Advanced options
 #
 # The cells hidden in this section expose the advanced options for this
 # pipeline and perform the final setup.  In most cases you do not need
@@ -312,11 +341,11 @@ if THING_TO_TRACK not in THING_TO_MODEL_CONFIG:
 #
 
 # %% cellView="form" id="SH-IeyipFHUv"
-#@markdown #### 2.5.1 - Chimpanzee detection
+#@markdown #### 2.6.1 - Detection step
 
 #@markdown The detection step is the first step.  It detects the
-#@markdown location of chimpanzees without attempting to identify who
-#@markdown they are.
+#@markdown location of the "things" of interest in all frames of the
+#@markdown video.
 
 #@markdown A detection model is required.  You can either train
 #@markdown your own model, or you can use one of our pre-trained
@@ -334,23 +363,27 @@ if not DETECTION_MODEL_CONFIG:
     DETECTION_MODEL_CONFIG = THING_TO_MODEL_CONFIG[THING_TO_TRACK]["config-url"]
     DETECTION_CLASS_IDX = THING_TO_MODEL_CONFIG[THING_TO_TRACK]["class-idx"]
 
-#@markdown When the model detects a face or body, that detection is
+#@markdown When the model detects something, that detection is
 #@markdown made with a confidence score.  Detections with a confidence
 #@markdown score lower than the threshold are ignored.  If you set the
-#@markdown threshold too high, you may loose some tracks but if you
-#@markdown set it too low you may gain false tracks that need to be
-#@markdown removed later.
+#@markdown threshold too high, you may miss detections in some frames
+#@markdown which need to be filled by the tracker..  If you set it too
+#@markdown low, false detections will lead to false tracks that need
+#@markdown to be manually removed later.
+
 DETECTION_THRESHOLD = 0.6  #@param {type: "slider", min: 0.0, max: 1.0, step: 0.01}
 
 # %% cellView="form" id="nmuWC94sFHUw"
-#@markdown #### 2.5.2 - Chimpanzee tracking
+#@markdown #### 2.6.2 - Tracking step
 
-#@markdown The final step is to track the detected chimpanzees in the
-#@markdown video.
+#@markdown The final step is to merge the detections into individual
+#@markdown tracks.
 
-#@markdown You will need to provide a model.  We recommend you use
-#@markdown [this one](https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/tracking-model-20181031_e45.pth).
-#@markdown You will also specify a path in your Google Drive.
+#@markdown You will need to provide a model for the tracker.  We
+#@markdown recommend you use [this
+#@markdown one](https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/tracking-model-20181031_e45.pth).
+#@markdown Alternatively, you can also specify a path in your Google
+#@markdown Drive.
 TRACKING_MODEL = 'https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/tracking-model-20181031_e45.pth'  #@param {type: "string"}
 
 MATCH_OVERLAP_THRESHOLD = 0.2  #@param {type:"slider", min:0.0, max:1.0, step:0.01}
@@ -360,14 +393,14 @@ NONMATCH_TRACKING_THRESHOLD = 0.9  #@param {type:"slider", min:0.0, max:1.0, ste
 UNKNOWN_TRACK_ID_MARKER = -1
 
 # %% cellView="form" id="YUIcftRMFHUy"
-#@markdown #### 2.5.3 - Verbosity
+#@markdown #### 2.6.3 - Verbosity
 
 #@markdown How chatty do you want the notebook to be?  INFO is a good
 #@markdown choice if you want to have a feeling for progress.
 LOG_LEVEL = 'INFO'  #@param ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]
 
 # %% cellView="form" id="OWKXpxAuFHUy"
-#@markdown #### 2.5.4 - The final setup step
+#@markdown #### 2.6.4 - The final setup step
 
 #@markdown Run this cell to perform the final pipeline setup based on
 #@markdown the given options.
@@ -460,11 +493,11 @@ _logger.info('Finished extracting individual frames to \'%s\'', FRAMES_DIR)
 # %% [markdown] id="AAhN5CkMFHU0"
 # ## 4 - Detection step
 #
-# The detection of chimpanzees is the first step in the pipeline.  If
-# you have previously run the detection step then you will have a `detections.pkl`
-# file in the results directory.  If so, skip the "detection" cell and
-# run the "load previous detections results" cell instead (you may need
-# to click in "2 cells hidden" to see them).
+# The detection of "things" is the first step in the pipeline.  If you
+# have previously run the detection step then you will have a
+# `detections.pkl` file in the results directory.  If so, skip the
+# "Run detection" cell (section 4.1) and run the "Load previous
+# detections results" cell instead (section 4.2).
 #
 
 # %% cellView="form" id="jk_beBJTFHU2"
@@ -510,15 +543,15 @@ _logger.info('Detection results loaded from \'%s\'', DETECTIONS_PKL_FPATH)
 # %% [markdown] id="FN5FGZxJFHU3"
 # ## 5 - Tracking step
 #
-# The final step in the pipeline is to track the detected chimpanzees
-# in the video.  At the end of this step, the tracking results will be
-# saved in a CSV file and as a
+# The final step in the pipeline is to track the things detected in
+# the detection step.  At the end of this step, the tracking results
+# will be saved in a CSV file and as a
 # [VIA](https://www.robots.ox.ac.uk/~vgg/software/via/) project.
 #
 # If you have previously run the tracking step then you will have a
-# `tracks.pkl` file in the results directory.  If so, skip the
-# "tracking" cell and run the "load previous tracking results" cell
-# instead.
+# `tracks.pkl` file in the results directory.  If so, skip the "Run
+# tracking" cell (section 5.1) and run the "Load previous tracking
+# results" cell instead (section 5.2).
 
 # %% cellView="form" id="GodRuQQ4FHU3"
 #@markdown ### 5.1 - Run tracking (option 1)
@@ -569,7 +602,7 @@ _logger.info('Tracking results loaded from \'%s\'', TRACKS_PKL_FPATH)
 
 
 # %% [markdown] id="1XoTxVlsFHU3"
-# ## 6 - Visualise tracking results
+# ## 6 - Visualise results
 #
 
 # %% [markdown] id="LL5er1FZCiBo"
