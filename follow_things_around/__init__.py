@@ -242,7 +242,8 @@ def track(
             # SVT uses a [track_id, x, y, w, h] for each detection
             # (list not tuple because it changes `tracker_id`.
             detections4svt[shot_id][frame_id][box_id] = [
-                UNKNOWN_TRACKER_ID, *detection
+                UNKNOWN_TRACK_ID_MARKER,
+                *detection,
             ]
 
     tracker = siamrpn_tracker(
