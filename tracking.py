@@ -211,6 +211,7 @@ from follow_things_around import (
     ffmpeg_video_to_frames,
     make_frames_with_tracks,
     track,
+    FramesDirDataset,
 )
 
 logging.basicConfig()
@@ -503,40 +504,38 @@ _logger.info('Finished extracting individual frames to \'%s\'', FRAMES_DIR)
 # %% cellView="form" id="jk_beBJTFHU2"
 #@markdown ### 4.1 - Run detection (option 1)
 
-video_frames = sorted(glob.glob(os.path.join(FRAMES_DIR, '*.jpg')))
-
-if len(video_frames) == 0:
+dataset = FramesDirDataset(FRAMES_DIR)
+if len(dataset) == 0:
     raise Exception(
         "No files in '%s'.  Did you run the previous section which converts"
         " the video to frames?" % FRAMES_DIR
     )
 
-detections, frame_id_to_filename = detect(
-    video_frames,
+detections = detect(
+    dataset,
     DETECTION_MODEL_CONFIG_PATH,
     DETECTION_CLASS_IDX,
     DETECTION_THRESHOLD,
 )
 
 with open(DETECTIONS_PKL_FPATH, 'wb') as fh:
-    pickle.dump(
-        {
-            'detections': detections,
-            'frame_id_to_filename': frame_id_to_filename,
-        },
-        fh,
-    )
-_logger.info('Detection results saved to \'%s\'', DETECTIONS_PKL_FPATH)
+    pickle.dump({'detections': detections}, fh)
+_logger.info("Detection results saved to '%s'", DETECTIONS_PKL_FPATH)
+
 
 # %% cellView="form" id="xHVc5I4EFHU2"
 #@markdown ### 4.2 - Load previous detection results (option 2)
 
+dataset = FramesDirDataset(FRAMES_DIR)
+if len(dataset) == 0:
+    raise Exception(
+        "No files in '%s'.  Did you run the previous section which converts"
+        " the video to frames?" % FRAMES_DIR
+    )
+
 with open(DETECTIONS_PKL_FPATH, 'rb') as fh:
     loaded_detections = pickle.load(fh)
-
 detections = loaded_detections['detections']
-frame_id_to_filename = loaded_detections['frame_id_to_filename']
-video_frames = list(frame_id_to_filename.values())
 
 _logger.info('Detection results loaded from \'%s\'', DETECTIONS_PKL_FPATH)
 
@@ -556,35 +555,19 @@ _logger.info('Detection results loaded from \'%s\'', DETECTIONS_PKL_FPATH)
 # %% cellView="form" id="GodRuQQ4FHU3"
 #@markdown ### 5.1 - Run tracking (option 1)
 
-tracks = track(
-    detections,
-    frame_id_to_filename,
-    TRACKING_MODEL_PATH,
-)
-
-# XXX: So far we've been using absolute filepaths.  However, in the
-# exported VIA project we want to use the filename only so that the
-# images can be found by setting the project "Default Path".  This
-# hack changes the filepath in the SVT internals.
-tracks.frame_id_to_filename_map = {
-    k: os.path.basename(v)
-    for k, v in tracks.frame_id_to_filename_map.items()
-}
+tracks = track(dataset, detections, TRACKING_MODEL_PATH)
 
 tracks.export_via_project(
     RESULTS_VIA_FPATH,
-    config={'frame_img_dir': FRAMES_DIR, 'via_project_name': ''},
+    config={
+        'frame_img_dir': dataset.frames_dir,
+        'via_project_name': '',
+    },
 )
 tracks.export_plain_csv(RESULTS_CSV_FPATH, {})
 
 with open(TRACKS_PKL_FPATH, 'wb') as fh:
-    pickle.dump(
-        {
-            'tracks': tracks,
-            'frame_id_to_filename': frame_id_to_filename,
-        },
-        fh,
-    )
+    pickle.dump({'tracks': tracks}, fh)
 _logger.info('Tracking results saved to \'%s\'', TRACKS_PKL_FPATH)
 
 
@@ -593,10 +576,7 @@ _logger.info('Tracking results saved to \'%s\'', TRACKS_PKL_FPATH)
 
 with open(TRACKS_PKL_FPATH, 'rb') as fh:
     loaded_tracks = pickle.load(fh)
-
 tracks = loaded_tracks['tracks']
-frame_id_to_filename = loaded_tracks['frame_id_to_filename']
-video_frames = list(frame_id_to_filename.values())
 
 _logger.info('Tracking results loaded from \'%s\'', TRACKS_PKL_FPATH)
 
@@ -622,7 +602,7 @@ _logger.info('Tracking results loaded from \'%s\'', TRACKS_PKL_FPATH)
 #@markdown is released.  Expect a couple of seconds wait for the frame
 #@markdown to be updated.
 
-display_detections(frame_id_to_filename, tracks.detection_data['0'])
+display_detections(dataset, tracks.detection_data['0'])
 
 # %% [markdown] id="i5FjIafRC8te"
 # ### 6.2 - Visualise locally with VIA (option 2)

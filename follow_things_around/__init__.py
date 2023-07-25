@@ -17,8 +17,7 @@ import os
 import os.path
 import shutil
 import subprocess
-from collections import defaultdict
-from typing import Dict, List, NamedTuple
+from typing import Dict, List, NamedTuple, Tuple
 
 import cv2
 import detectron2.config
@@ -27,9 +26,11 @@ import detectron2.model_zoo
 import IPython.display
 import ipywidgets
 import matplotlib.cm
+import numpy as np
 import pandas as pd
 import PIL.Image
 import plotly.express
+import torch.utils.data
 from svt.siamrpn_tracker import siamrpn_tracker
 
 from follow_things_around import svt_patch
@@ -144,6 +145,29 @@ def ffmpeg_video_from_frames_and_video(
     )
 
 
+class FramesDirDataset(torch.utils.data.Dataset):
+    def __init__(self, frames_dir: str) -> None:
+        super().__init__()
+        self._frames_dir = frames_dir
+        self._frames = sorted(os.listdir(self._frames_dir))
+
+    @property
+    def frames_dir(self) -> str:
+        return self._frames_dir
+
+    @property
+    def frames(self) -> List[str]:
+        return self._frames
+
+    def __getitem__(self, idx: int) -> PIL.Image.Image:
+        fname = self._frames[idx]
+        img = np.array(PIL.Image.open(os.path.join(self._frames_dir, fname)))
+        return img
+
+    def __len__(self) -> int:
+        return len(self._frames)
+
+
 class Detection(NamedTuple):
     x: float
     y: float
@@ -151,19 +175,17 @@ class Detection(NamedTuple):
     h: float
 
 
-# TODO: why frame_id_to_filename only includes frames with detections?
-# Can't we just check on the the list of detections that there's none?
-#
-# TODO: why do we convert the frame number to a string for keys in the
-# dict?  Why not just use an int?
-#
-# TODO: why return frame_id_to_filename (can't that be deduced?)
+FrameDetections = List[Detection]
+
+DatasetDetections = List[FrameDetections]
+
+
 def detect(
-    video_frames: List[str],
+    dataset: FramesDirDataset,
     detection_model_config_path: str,
     class_idx: int,
     visual_threshold: float,
-):
+) -> DatasetDetections:
     if visual_threshold < 0.0 or visual_threshold > 1.0:
         raise ValueError(
             "visual_threshold needs to be a number between 0.0 and 1.0"
@@ -179,43 +201,43 @@ def detect(
 
     _logger.info("Starting detection phase")
 
-    frame_id_to_filename: Dict[str, str] = {}
-    frame_detections: Dict[str, Dict[str, Detection]] = defaultdict(dict)
+    dataset_detections: DatasetDetections = []
 
-    # Go through frame list
-    for frame_index, frame_fpath in enumerate(video_frames):
-        frame_id = str(frame_index)  # XXX: Why?  Why are we not using the int?
-        frame_id_to_filename[frame_id] = frame_fpath
-
+    for frame_index, img in enumerate(dataset):
         if frame_index % 1000 == 0:
             _logger.info(
                 "Starting to process images %d to %d",
                 frame_index,
-                min(frame_index + 1000 - 1, len(video_frames) - 1),
+                min(frame_index + 1000 - 1, len(dataset) - 1),
             )
 
-        # Acquire image
-        img = cv2.imread(frame_fpath)
-        outputs = predictor(img)
+        img_bgr = img[
+            :, :, ::-1
+        ]  # predictor wants image in BGR instead of RGB
+        outputs = predictor(img_bgr)
         bboxes = outputs["instances"].pred_boxes[
             outputs["instances"].pred_classes == class_idx
         ]
 
+        frame_detections: FrameDetections = []
         for i, bbox in enumerate(bboxes):
-            frame_detections[frame_id][str(i)] = Detection(
-                x=float(bbox[0]),
-                y=float(bbox[1]),
-                w=float(bbox[2] - bbox[0]),
-                h=float(bbox[3] - bbox[1]),
+            frame_detections.append(
+                Detection(
+                    x=float(bbox[0]),
+                    y=float(bbox[1]),
+                    w=float(bbox[2] - bbox[0]),
+                    h=float(bbox[3] - bbox[1]),
+                )
             )
+        dataset_detections.append(frame_detections)
 
     _logger.info("Finished detections")
-    return frame_detections, frame_id_to_filename
+    return dataset_detections
 
 
 def track(
-    detections: Dict[str, Dict[str, Detection]],
-    frame_id_to_filename: Dict[str, str],
+    dataset: FramesDirDataset,
+    detections: DatasetDetections,
     tracking_model_path: str,
 ):
     _logger.info("Starting tracking phase")
@@ -229,28 +251,36 @@ def track(
         "nonmatch_tracking_threshold": NONMATCH_TRACKING_THRESHOLD,
         "match_overlap_threshold": MATCH_OVERLAP_THRESHOLD,
         "UNKNOWN_TRACK_ID_MARKER": UNKNOWN_TRACK_ID_MARKER,
-        "frame_img_dir": "",
+        "frame_img_dir": dataset.frames_dir,
         "via_project_name": VIDEO_FILE,
     }
 
+    # SVT uses dicts instead of lists for detections and uses strings
+    # even though it expects the keys to be integers (possibly to make
+    # it easy to export to JSON).  So make that conversion.
     # We expect videos to be of a single shot, hence only shot_id 0.
-    # XXX: Why are we using strings for int keys?
     shot_id = "0"
-    detections4svt = {shot_id: {x: {} for x in frame_id_to_filename.keys()}}
-    for frame_id, detections_values in detections.items():
-        for box_id, detection in detections_values.items():
+    detections4svt = {shot_id: {}}
+    for frame_idx, frame_detections in enumerate(detections):
+        frame_key = str(frame_idx)
+        detections4svt[shot_id][frame_key] = {}
+        for box_idx, detection in enumerate(frame_detections):
+            box_key = str(box_idx)
             # SVT uses a [track_id, x, y, w, h] for each detection
             # (list not tuple because it changes `tracker_id`.
-            detections4svt[shot_id][frame_id][box_id] = [
+            detections4svt[shot_id][frame_key][box_key] = [
                 UNKNOWN_TRACK_ID_MARKER,
                 *detection,
             ]
 
+    # SVT also needs a separate map of frame id to relative filepaths.
+    frame_id_to_fpath = {str(i): f for i, f in enumerate(dataset.frames)}
+
     tracker = siamrpn_tracker(
         model_path=tracking_model_path, config=tracker_config
     )
-    svt_detections = svt_patch.detections()
-    svt_detections.read(detections4svt, frame_id_to_filename)
+
+    svt_detections = svt_patch.detections(detections4svt, frame_id_to_fpath)
     svt_detections.match(tracker=tracker, config=detections_match_config)
 
     _logger.info("Finished tracking")
@@ -258,19 +288,14 @@ def track(
 
 
 def display_detections(
-    frame_id_to_filename,
+    dataset: FramesDirDataset,
     svt_s0_detections,
 ):
-    frame_id_filename_pair = sorted(
-        list(frame_id_to_filename.items()),
-        key=lambda kv: kv[1],
-    )
-
     figure_output = ipywidgets.Output()
     frame_slider = ipywidgets.IntSlider(
         value=0,
         min=0,
-        max=len(frame_id_filename_pair) - 1,
+        max=len(dataset) - 1,
         step=1,
         orientation="horizontal",
         # description and readout are disabled because we'll show the
@@ -292,7 +317,7 @@ def display_detections(
     )
 
     def show_frame(idx):
-        img = PIL.Image.open(frame_id_filename_pair[idx][1])
+        img = dataset[idx]
         fig = plotly.express.imshow(img)
         for track, x, y, width, height in svt_s0_detections[str(idx)].values():
             fig.add_shape(
@@ -314,7 +339,7 @@ def display_detections(
             fig.show()
 
     def on_frame_slider_change(change):
-        frame_label.value = frame_id_filename_pair[change["new"]][1]
+        frame_label.value = dataset.frames[change["new"]]
         show_frame(change["new"])
 
     def on_click_previous(button):
@@ -331,7 +356,7 @@ def display_detections(
     next_button.on_click(on_click_next)
     frame_slider.observe(on_frame_slider_change, names="value")
 
-    frame_label = ipywidgets.Label(frame_id_filename_pair[0][1])
+    frame_label = ipywidgets.Label(dataset.frames[0])
     show_frame(0)
 
     buttons_box = ipywidgets.HBox([previous_button, frame_slider, next_button])
