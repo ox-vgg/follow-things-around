@@ -145,7 +145,6 @@ def ffmpeg_video_from_frames_and_video(
 
 
 class Detection(NamedTuple):
-    track_id: int
     x: float
     y: float
     w: float
@@ -204,7 +203,6 @@ def detect(
 
         for i, bbox in enumerate(bboxes):
             frame_detections[frame_id][str(i)] = Detection(
-                track_id=UNKNOWN_TRACK_ID_MARKER,
                 x=float(bbox[0]),
                 y=float(bbox[1]),
                 w=float(bbox[2] - bbox[0]),
@@ -241,9 +239,11 @@ def track(
     detections4svt = {shot_id: {x: {} for x in frame_id_to_filename.keys()}}
     for frame_id, detections_values in detections.items():
         for box_id, detection in detections_values.items():
-            # `detection` is a named tuple but SVT will be modifying
-            # it to add track_id, so convert to list.
-            detections4svt[shot_id][frame_id][box_id] = list(detection)
+            # SVT uses a [track_id, x, y, w, h] for each detection
+            # (list not tuple because it changes `tracker_id`.
+            detections4svt[shot_id][frame_id][box_id] = [
+                UNKNOWN_TRACKER_ID, *detection
+            ]
 
     tracker = siamrpn_tracker(
         model_path=tracking_model_path, config=tracker_config
