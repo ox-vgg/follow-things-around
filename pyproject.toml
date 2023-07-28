@@ -17,7 +17,11 @@ classifiers = [
 dependencies = [
     "Pillow",
     "detectron2",
-    "google-colab",
+    # google-colab in PyPI requires pandas~=0.24.0 which won't install
+    # in recent Python's.  It is only needed when running the notebook
+    # in Colab which already has it anyway, so declaring it here is
+    # pointless and only creates problems.
+    # "google-colab",
     "ipython",
     "ipywidgets",
     "matplotlib",
