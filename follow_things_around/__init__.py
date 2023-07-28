@@ -36,7 +36,7 @@ from svt.siamrpn_tracker import siamrpn_tracker
 from follow_things_around import svt_patch
 
 
-_logger = logging.getLogger()
+_logger = logging.getLogger(__name__)
 
 
 USE_GPU: bool = True
