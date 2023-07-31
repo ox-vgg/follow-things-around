@@ -74,6 +74,11 @@ def empty_via2_project_detections() -> Dict:
         "description": "Unique ID of a specific region/box within one frame",
         "type": "text",
     }
+    project["_via_attributes"]["region"]["detection_score"] = {
+        "default_value": "",
+        "description": "Confidence score of the detection",
+        "type": "text",
+    }
     return project
 
 
@@ -102,6 +107,7 @@ def detections_to_via2(
                     "shape_attributes": detection_to_via2_shape(detection),
                     "region_attributes": {
                         "box_id": str(box_idx),
+                        "detection_score": str(detection.score),
                     },
                 }
             )

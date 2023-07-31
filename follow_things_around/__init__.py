@@ -173,6 +173,7 @@ class Detection(NamedTuple):
     y: float
     w: float
     h: float
+    score: float
 
 
 FrameDetections = List[Detection]
@@ -215,6 +216,12 @@ def detect(
             :, :, ::-1
         ]  # predictor wants image in BGR instead of RGB
         outputs = predictor(img_bgr)
+
+        scores = (
+            outputs["instances"]
+            .scores[outputs["instances"].pred_classes == class_idx]
+            .to("cpu")
+        )
         bboxes = outputs["instances"].pred_boxes[
             outputs["instances"].pred_classes == class_idx
         ]
@@ -227,6 +234,7 @@ def detect(
                     y=float(bbox[1]),
                     w=float(bbox[2] - bbox[0]),
                     h=float(bbox[3] - bbox[1]),
+                    score=float(scores[i]),
                 )
             )
         dataset_detections.append(frame_detections)
