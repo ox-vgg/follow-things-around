@@ -364,10 +364,10 @@ if not os.path.isdir(RESULTS_DIRECTORY):
 #@markdown Leave this empty to use the pre-configured model to detect
 #@markdown the `THING_TO_TRACK` choosen in Section 2.4.
 
-DETECTION_MODEL_CONFIG = ''  #@param {type: "string"}
+DETECTION_MODEL_CONFIG_URL = ''  #@param {type: "string"}
 DETECTION_CLASS_IDX = 0
-if not DETECTION_MODEL_CONFIG:
-    DETECTION_MODEL_CONFIG = THING_TO_MODEL_CONFIG[THING_TO_TRACK]["config-url"]
+if not DETECTION_MODEL_CONFIG_URL:
+    DETECTION_MODEL_CONFIG_URL = THING_TO_MODEL_CONFIG[THING_TO_TRACK]["config-url"]
     DETECTION_CLASS_IDX = THING_TO_MODEL_CONFIG[THING_TO_TRACK]["class-idx"]
 
 #@markdown When the model detects something, that detection is
@@ -392,7 +392,7 @@ DETECTION_THRESHOLD = 0.6  #@param {type: "slider", min: 0.0, max: 1.0, step: 0.
 #@markdown one](https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/tracking-model-20181031_e45.pth).
 #@markdown Alternatively, you can also specify a path in your Google
 #@markdown Drive.
-TRACKING_MODEL = 'https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/tracking-model-20181031_e45.pth'  #@param {type: "string"}
+TRACKING_MODEL_URL = 'https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/tracking-model-20181031_e45.pth'  #@param {type: "string"}
 
 MATCH_OVERLAP_THRESHOLD = 0.2  #@param {type:"slider", min:0.0, max:1.0, step:0.01}
 
@@ -443,21 +443,6 @@ _logger.info('Will use %s device.', DEFAULT_DEVICE.upper())
 
 # Required to display the tracking results with plotly or matplotlib.
 google.colab.output.enable_custom_widget_manager()
-
-
-def local_path_for_model(path: str) -> str:
-    if path.startswith('https://'):
-        downloaded_fh = tempfile.NamedTemporaryFile(delete=False)
-        r = requests.get(path)
-        downloaded_fh.write(r.content)
-        downloaded_fh.flush()
-        return downloaded_fh.name
-    else:
-        return path
-
-
-DETECTION_MODEL_CONFIG_PATH = local_path_for_model(DETECTION_MODEL_CONFIG)
-TRACKING_MODEL_PATH = local_path_for_model(TRACKING_MODEL)
 
 
 follow_things_around.DEFAULT_DEVICE = DEFAULT_DEVICE
@@ -521,7 +506,7 @@ if len(dataset) == 0:
 
 detections = detect(
     dataset,
-    DETECTION_MODEL_CONFIG_PATH,
+    DETECTION_MODEL_CONFIG_URL,
     DETECTION_CLASS_IDX,
     DETECTION_THRESHOLD,
 )
@@ -567,7 +552,7 @@ _logger.info('Detection results loaded from \'%s\'', DETECTIONS_PKL_FPATH)
 # %% cellView="form" id="GodRuQQ4FHU3"
 #@markdown ### 5.1 - Run tracking (option 1)
 
-tracks = track(dataset, detections, TRACKING_MODEL_PATH)
+tracks = track(dataset, detections, TRACKING_MODEL_URL)
 
 tracks.export_via_project(
     RESULTS_VIA_FPATH,

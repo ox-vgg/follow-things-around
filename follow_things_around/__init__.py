@@ -23,6 +23,7 @@ import cv2
 import detectron2.config
 import detectron2.engine
 import detectron2.model_zoo
+import detectron2.utils.file_io
 import IPython.display
 import ipywidgets
 import matplotlib.cm
@@ -193,7 +194,11 @@ def detect(
         )
 
     d2_cfg = detectron2.config.get_cfg()
-    d2_cfg.merge_from_file(detection_model_config_path)
+    d2_cfg.merge_from_file(
+        detectron2.utils.file_io.PathManager.get_local_path(
+            detection_model_config_path
+        )
+    )
     d2_cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = visual_threshold
     d2_cfg.MODEL.DEVICE = DEFAULT_DEVICE
 
@@ -222,9 +227,11 @@ def detect(
             .scores[outputs["instances"].pred_classes == class_idx]
             .to("cpu")
         )
-        bboxes = outputs["instances"].pred_boxes[
-            outputs["instances"].pred_classes == class_idx
-        ].to("cpu")
+        bboxes = (
+            outputs["instances"]
+            .pred_boxes[outputs["instances"].pred_classes == class_idx]
+            .to("cpu")
+        )
 
         frame_detections: FrameDetections = []
         for i, bbox in enumerate(bboxes):
@@ -285,7 +292,10 @@ def track(
     frame_id_to_fpath = {str(i): f for i, f in enumerate(dataset.frames)}
 
     tracker = siamrpn_tracker(
-        model_path=tracking_model_path, config=tracker_config
+        model_path=detectron2.utils.file_io.PathManager.get_local_path(
+            tracking_model_path
+        ),
+        config=tracker_config,
     )
 
     svt_detections = svt_patch.detections(detections4svt, frame_id_to_fpath)

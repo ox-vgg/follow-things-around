@@ -95,7 +95,7 @@ THING_TO_MODEL_CONFIG = {
 }
 
 
-TRACKING_MODEL = "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/tracking-model-20181031_e45.pth"
+TRACKING_MODEL_URL = "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/tracking-model-20181031_e45.pth"
 
 
 def main(argv: List[str]) -> int:
@@ -135,7 +135,7 @@ def main(argv: List[str]) -> int:
     results_csv_fpath = os.path.join(args.results_dir, "results.csv")
     tracks_video_fpath = os.path.join(args.results_dir, "tracks.mp4")
 
-    detection_model_config = THING_TO_MODEL_CONFIG[args.what]["config-url"]
+    detection_model_config_url = THING_TO_MODEL_CONFIG[args.what]["config-url"]
     detection_class_idx = THING_TO_MODEL_CONFIG[args.what]["class-idx"]
     detection_threshold = 0.6
 
@@ -147,20 +147,6 @@ def main(argv: List[str]) -> int:
     follow_things_around.USE_GPU = True
     follow_things_around.VIDEO_FILE = args.video_fpath
     follow_things_around.FFMPEG_LOG_LEVEL = "warning"
-
-    ## TODO: this is duplicated in the notebook
-    def local_path_for_model(path: str) -> str:
-        if path.startswith("https://"):
-            downloaded_fh = tempfile.NamedTemporaryFile(delete=False)
-            r = requests.get(path)
-            downloaded_fh.write(r.content)
-            downloaded_fh.flush()
-            return downloaded_fh.name
-        else:
-            return path
-
-    detection_model_config_path = local_path_for_model(detection_model_config)
-    tracking_model_path = local_path_for_model(TRACKING_MODEL)
 
     if args.no_reuse_frames_dir:
         try:
@@ -174,7 +160,7 @@ def main(argv: List[str]) -> int:
     dataset = follow_things_around.FramesDirDataset(frames_dir)
     detections = follow_things_around.detect(
         dataset,
-        detection_model_config_path,
+        detection_model_config_url,
         detection_class_idx,
         detection_threshold,
     )
@@ -185,7 +171,7 @@ def main(argv: List[str]) -> int:
         )
 
     tracks = follow_things_around.track(
-        dataset, detections, tracking_model_path
+        dataset, detections, TRACKING_MODEL_URL
     )
     tracks.export_via_project(
         results_via_fpath,
