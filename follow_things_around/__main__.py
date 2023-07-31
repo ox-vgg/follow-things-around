@@ -33,6 +33,7 @@ import requests
 
 import follow_things_around
 import follow_things_around.via
+import follow_things_around as fta
 
 
 _logger = logging.getLogger(__name__)
@@ -101,6 +102,16 @@ def main(argv: List[str]) -> int:
     logging.basicConfig()
     argv_parser = argparse.ArgumentParser()
     argv_parser.add_argument(
+        "--no-reuse-frames-dir",
+        action="store_true",
+        help=(
+            "By default, if an existing frames directory exists, the images in"
+            " that directory.  This option makes it so that the directory is"
+            " removed (and all of its contents), forcing the frame images to"
+            " be recreated."
+        ),
+    )
+    argv_parser.add_argument(
         "what",
         help="What to track",
     )
@@ -151,8 +162,14 @@ def main(argv: List[str]) -> int:
     detection_model_config_path = local_path_for_model(detection_model_config)
     tracking_model_path = local_path_for_model(TRACKING_MODEL)
 
-    os.makedirs(frames_dir, exist_ok=True)
-    follow_things_around.ffmpeg_video_to_frames(args.video_fpath, frames_dir)
+    if args.no_reuse_frames_dir:
+        try:
+            shutil.rmtree(frames_dir)
+        except FileNotFoundError:
+            pass  # dir does not exist, this is fine
+    if not os.path.exists(frames_dir):
+        os.makedirs(frames_dir, exist_ok=True)
+        fta.ffmpeg_video_to_frames(args.video_fpath, frames_dir)
 
     dataset = follow_things_around.FramesDirDataset(frames_dir)
     detections = follow_things_around.detect(
