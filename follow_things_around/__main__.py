@@ -19,17 +19,20 @@
 ##
 ##     python -m follow_things_around ...
 
-import requests
 import argparse
+import json
 import logging
 import os
-import sys
-import tempfile
 import os.path
 import shutil
+import sys
+import tempfile
 from typing import List
 
+import requests
+
 import follow_things_around
+import follow_things_around.via
 
 
 _logger = logging.getLogger(__name__)
@@ -112,6 +115,9 @@ def main(argv: List[str]) -> int:
     args = argv_parser.parse_args(argv[1:])
 
     frames_dir = os.path.join(args.results_dir, "frames")
+    detections_via_fpath = os.path.join(
+        args.results_dir, "detections-via.json"
+    )
     results_via_fpath = os.path.join(
         args.results_dir, "results-via-project.json"
     )
@@ -155,6 +161,11 @@ def main(argv: List[str]) -> int:
         detection_class_idx,
         detection_threshold,
     )
+    with open(detections_via_fpath, "w") as fh:
+        json.dump(
+            follow_things_around.via.detections_to_via2(dataset, detections),
+            fh,
+        )
 
     tracks = follow_things_around.track(
         dataset, detections, tracking_model_path

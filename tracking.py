@@ -77,11 +77,15 @@
 # - `detections.pkl` - the initial detections in [Python's pickle
 #   format](https://docs.python.org/3/library/pickle.html).
 #
+# - `detections-via.json` - the initial detections as a
+#   [VIA 2](https://www.robots.ox.ac.uk/~vgg/software/via/) project.
+#   This requires the images in the `frames` directory.
+#
 # - `tracks.pkl` - the detected tracks in [Python's pickle
 #   format](https://docs.python.org/3/library/pickle.html).
 #
-# - `results-via-project.json` - the final detections as a
-#   [VIA](https://www.robots.ox.ac.uk/~vgg/software/via/) project.  This
+# - `results-via-project.json` - the final detections as a [VIA
+#   2](https://www.robots.ox.ac.uk/~vgg/software/via/) project.  This
 #   requires the images in the `frames` directory.
 #
 # - `results.csv` - the final detections in CSV format.
@@ -191,6 +195,7 @@ print("Installing Follow-Things-Around")
 # !pip install --quiet git+https://github.com/ox-vgg/follow-things-around.git
 
 import glob
+import json
 import logging
 import os
 import os.path
@@ -213,6 +218,7 @@ from follow_things_around import (
     track,
     FramesDirDataset,
 )
+from follow_things_around.via import detections_to_via2
 
 logging.basicConfig()
 _logger = logging.getLogger()
@@ -374,6 +380,7 @@ if not DETECTION_MODEL_CONFIG:
 
 DETECTION_THRESHOLD = 0.6  #@param {type: "slider", min: 0.0, max: 1.0, step: 0.01}
 
+
 # %% cellView="form" id="nmuWC94sFHUw"
 #@markdown #### 2.6.2 - Tracking step
 
@@ -410,6 +417,7 @@ logging.getLogger().setLevel(LOG_LEVEL)
 
 FRAMES_DIR = os.path.join(RESULTS_DIRECTORY, 'frames')
 DETECTIONS_PKL_FPATH = os.path.join(RESULTS_DIRECTORY, 'detections.pkl')
+DETECTIONS_VIA_FPATH = os.path.join(RESULTS_DIRECTORY, 'detections-via.json')
 TRACKS_PKL_FPATH = os.path.join(RESULTS_DIRECTORY, 'tracks.pkl')
 RESULTS_VIA_FPATH = os.path.join(RESULTS_DIRECTORY, 'results-via-project.json')
 RESULTS_CSV_FPATH = os.path.join(RESULTS_DIRECTORY, 'results.csv')
@@ -521,6 +529,10 @@ detections = detect(
 with open(DETECTIONS_PKL_FPATH, 'wb') as fh:
     pickle.dump({'detections': detections}, fh)
 _logger.info("Detection results saved to '%s'", DETECTIONS_PKL_FPATH)
+
+with open(DETECTIONS_VIA_FPATH, 'w') as fh:
+    json.dump(detections_to_via2(dataset, detections), fh)
+_logger.info("Detection VIA project saved to '%s'", DETECTIONS_VIA_FPATH)
 
 
 # %% cellView="form" id="xHVc5I4EFHU2"
