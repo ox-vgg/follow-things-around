@@ -112,6 +112,16 @@ def main(argv: List[str]) -> int:
         ),
     )
     argv_parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Log info level messages (see also --debug option)"
+    )
+    argv_parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Log debug level messages (see also --verbose option)"
+    )
+    argv_parser.add_argument(
         "what",
         help="What to track",
     )
@@ -124,6 +134,11 @@ def main(argv: List[str]) -> int:
         help="Path for results dir",
     )
     args = argv_parser.parse_args(argv[1:])
+
+    if args.verbose:
+        logging.getLogger().setLevel(logging.INFO)
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
 
     frames_dir = os.path.join(args.results_dir, "frames")
     detections_via_fpath = os.path.join(
