@@ -224,7 +224,7 @@ def detect(
         )
         bboxes = outputs["instances"].pred_boxes[
             outputs["instances"].pred_classes == class_idx
-        ]
+        ].to("cpu")
 
         frame_detections: FrameDetections = []
         for i, bbox in enumerate(bboxes):
