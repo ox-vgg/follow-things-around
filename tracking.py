@@ -200,8 +200,6 @@ import logging
 import os
 import os.path
 import pickle
-import shutil
-import tempfile
 
 import google.colab.drive
 import google.colab.output
@@ -212,9 +210,8 @@ import follow_things_around
 from follow_things_around import (
     detect,
     display_detections,
-    ffmpeg_video_from_frames_and_video,
     ffmpeg_video_to_frames,
-    make_frames_with_tracks,
+    make_video_with_tracks,
     track,
     FramesDirDataset,
 )
@@ -644,12 +641,7 @@ display_detections(dataset, tracks.detection_data['0'])
 #@markdown superimposed.  The video file will be named `tracks.mp4`
 #@markdown and saved in the `RESULTS_DIRECTORY` in your Google Drive.
 
-with tempfile.TemporaryDirectory() as out_frames_dir:
-    tmp_tracks_fpath = os.path.join(out_frames_dir, 'tracks.mp4')
-    make_frames_with_tracks(RESULTS_CSV_FPATH, FRAMES_DIR, out_frames_dir)
-    ffmpeg_video_from_frames_and_video(
-        out_frames_dir, VIDEO_FILE, tmp_tracks_fpath
-    )
-    shutil.move(tmp_tracks_fpath, TRACKS_VIDEO_FPATH)
-
+make_video_with_tracks(
+    VIDEO_FILE, TRACKS_VIDEO_FPATH, FRAMES_DIR, RESULTS_CSV_FPATH
+)
 _logger.info('Video file with tracks created \'%s\'', TRACKS_VIDEO_FPATH)

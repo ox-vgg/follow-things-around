@@ -17,6 +17,7 @@ import os
 import os.path
 import shutil
 import subprocess
+import tempfile
 from typing import Dict, List, NamedTuple, Tuple
 
 import cv2
@@ -458,3 +459,18 @@ def make_frames_with_tracks(
             img = cv2.imread(in_fpath)
             draw_tracks_in_img(img, frame_tracks)
             cv2.imwrite(out_fpath, img)
+
+
+def make_video_with_tracks(
+    in_video_fpath: str,
+    out_video_fpath: str,
+    frames_dir: str,
+    tracks_csv_fpath: str,
+) -> None:
+    with tempfile.TemporaryDirectory() as out_frames_dir:
+        tmp_tracks_fpath = os.path.join(out_frames_dir, "tracks.mp4")
+        make_frames_with_tracks(tracks_csv_fpath, frames_dir, out_frames_dir)
+        ffmpeg_video_from_frames_and_video(
+            out_frames_dir, in_video_fpath, tmp_tracks_fpath
+        )
+    shutil.move(tmp_tracks_fpath, out_video_fpath)

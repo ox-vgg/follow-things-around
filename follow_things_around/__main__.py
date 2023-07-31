@@ -26,14 +26,13 @@ import os
 import os.path
 import shutil
 import sys
-import tempfile
 from typing import List
 
 import requests
 
 import follow_things_around
-import follow_things_around.via
 import follow_things_around as fta
+import follow_things_around.via
 
 
 _logger = logging.getLogger(__name__)
@@ -114,12 +113,12 @@ def main(argv: List[str]) -> int:
     argv_parser.add_argument(
         "--verbose",
         action="store_true",
-        help="Log info level messages (see also --debug option)"
+        help="Log info level messages (see also --debug option)",
     )
     argv_parser.add_argument(
         "--debug",
         action="store_true",
-        help="Log debug level messages (see also --verbose option)"
+        help="Log debug level messages (see also --verbose option)",
     )
     argv_parser.add_argument(
         "what",
@@ -197,16 +196,10 @@ def main(argv: List[str]) -> int:
     )
     tracks.export_plain_csv(results_csv_fpath, {})
 
-    ## TODO: this is duplicated in the notebook
-    with tempfile.TemporaryDirectory() as out_frames_dir:
-        tmp_tracks_fpath = os.path.join(out_frames_dir, "tracks.mp4")
-        follow_things_around.make_frames_with_tracks(
-            results_csv_fpath, frames_dir, out_frames_dir
-        )
-        follow_things_around.ffmpeg_video_from_frames_and_video(
-            out_frames_dir, args.video_fpath, tmp_tracks_fpath
-        )
-        shutil.move(tmp_tracks_fpath, tracks_video_fpath)
+    make_video_with_tracks(
+        args.video_fpath, tracks_video_fpath, frames_dir, results_csv_fpath
+    )
+    _logger.info("Video file with tracks created '%s'", tracks_video_fpath)
 
     return 0
 
