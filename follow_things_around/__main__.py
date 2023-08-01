@@ -97,6 +97,13 @@ THING_TO_MODEL_CONFIG = {
 TRACKING_MODEL_URL = "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/tracking-model-20181031_e45.pth"
 
 
+def score_value(arg: str) -> float:
+    x = float(arg)
+    if x < 0 or x > 1:
+        raise ValueError("not a value between 0 and 1")
+    return x
+
+
 def main(argv: List[str]) -> int:
     logging.basicConfig()
     argv_parser = argparse.ArgumentParser()
@@ -119,6 +126,12 @@ def main(argv: List[str]) -> int:
         "--debug",
         action="store_true",
         help="Log debug level messages (see also --verbose option)",
+    )
+    argv_parser.add_argument(
+        "--detection-threshold",
+        type=score_value,
+        default=0.6,
+        help="Detections with scores below this value are ignored"
     )
     argv_parser.add_argument(
         "what",
@@ -151,7 +164,6 @@ def main(argv: List[str]) -> int:
 
     detection_model_config_url = THING_TO_MODEL_CONFIG[args.what]["config-url"]
     detection_class_idx = THING_TO_MODEL_CONFIG[args.what]["class-idx"]
-    detection_threshold = 0.6
 
     follow_things_around.DEFAULT_DEVICE = "cuda"
     follow_things_around.FRAMES_DIR = frames_dir
@@ -176,7 +188,7 @@ def main(argv: List[str]) -> int:
         dataset,
         detection_model_config_url,
         detection_class_idx,
-        detection_threshold,
+        args.detection_threshold,
     )
     with open(detections_via_fpath, "w") as fh:
         json.dump(
