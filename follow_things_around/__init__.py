@@ -473,4 +473,4 @@ def make_video_with_tracks(
         ffmpeg_video_from_frames_and_video(
             out_frames_dir, in_video_fpath, tmp_tracks_fpath
         )
-    shutil.move(tmp_tracks_fpath, out_video_fpath)
+        shutil.move(tmp_tracks_fpath, out_video_fpath)
