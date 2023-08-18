@@ -116,25 +116,31 @@ def ffprobe_get_frame_rate(video_fpath: str) -> float:
     ffprobe_p = subprocess.run(
         [
             "ffprobe",
+            "-print_format",
+            "json",
             "-loglevel",
             "panic",
+            "-show_streams",
             "-select_streams",
             "v",
-            "-show_entries",
-            "stream=r_frame_rate",
-            "-print_format",
-            "csv",
             video_fpath,
         ],
         check=True,
         stdout=subprocess.PIPE,
         text=True,
     )
-    # we expect something like "stream,25/1\n"
-    frame_rate_parts = ffprobe_p.stdout.split(",")[1][:-1].split("/")
-    if len(frame_rate_parts) == 1:
+    streams = json.loads(ffprobe_p.stdout)["streams"]
+    if len(streams) < 1:
+        raise Exception("Video has no video stream")
+    if len(streams) > 1:
+        _logger.warning(
+            "Video has more than 1 video stream - will only handle the first"
+        )
+    # we expect something like "25/1" or a number
+    frame_rate_parts = streams[0]["r_frame_rate"].split("/")
+    if len(frame_rate_parts) == 1:  # format is a number
         return float(frame_rate_parts[0])
-    else:  # format is something such as 25/1
+    else:  # format is a fraction such as 25/1
         return float(frame_rate_parts[0]) / float(frame_rate_parts[1])
 
 
