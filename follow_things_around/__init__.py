@@ -12,6 +12,7 @@
 ## implied.  See the License for the specific language governing
 ## permissions and limitations under the License.
 
+import json
 import logging
 import os
 import os.path
@@ -88,6 +89,29 @@ def ffmpeg_video_to_frames(video_fpath: str, frames_dir: str) -> None:
     )
 
 
+def ffprobe_has_audio(video_fpath: str) -> bool:
+    ffprobe_p = subprocess.run(
+        [
+            "ffprobe",
+            "-print_format",
+            "json",
+            "-loglevel",
+            "panic",
+            "-show_streams",
+            "-select_streams",
+            "a",
+            video_fpath,
+        ],
+        check=True,
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    streams = json.loads(ffprobe_p.stdout)["streams"]
+    if len(streams) > 1:
+        _logger.warning("Video has more than 1 audio stream")
+    return len(streams) > 0
+
+
 def ffprobe_get_frame_rate(video_fpath: str) -> float:
     ffprobe_p = subprocess.run(
         [
@@ -117,31 +141,38 @@ def ffprobe_get_frame_rate(video_fpath: str) -> float:
 def ffmpeg_video_from_frames_and_video(
     frames_dir: str, in_video_fpath: str, out_video_fpath: str
 ) -> None:
-    frame_rate = ffprobe_get_frame_rate(in_video_fpath)
+    video_args = [
+        "-framerate",
+        str(ffprobe_get_frame_rate(in_video_fpath)),
+        "-pattern_type",
+        "glob",
+        "-i",
+        os.path.join(frames_dir, "*.jpg"),
+        "-c:v",
+        "libx264",
+        "-map",
+        "0:v:0",  # use video from input 0 / stream 0
+        "-pix_fmt",
+        "yuv420p",
+    ]
+    audio_args = []
+    if ffprobe_has_audio(in_video_fpath):
+        audio_args = [
+            "-i",
+            in_video_fpath,
+            "-c:a",
+            "aac",  # https://github.com/ox-vgg/chimpanzee-tracking/issues/1
+            "-map",
+            "1:a:0",  # use audio from input 1 / stream 0
+        ]
     subprocess_print_stderr(
         [
             "ffmpeg",
             "-y",  # overwrite output files without asking
             "-loglevel",
             FFMPEG_LOG_LEVEL,
-            "-framerate",
-            str(frame_rate),
-            "-pattern_type",
-            "glob",
-            "-i",
-            os.path.join(frames_dir, "*.jpg"),
-            "-i",
-            in_video_fpath,
-            "-c:a",
-            "aac",  # https://github.com/ox-vgg/chimpanzee-tracking/issues/1
-            "-c:v",
-            "libx264",
-            "-map",
-            "0:v:0",  # use video from input 0 / stream 0
-            "-map",
-            "1:a:0",  # use audio from input 1 / stream 0
-            "-pix_fmt",
-            "yuv420p",
+            *video_args,
+            *audio_args,
             out_video_fpath,
         ]
     )
