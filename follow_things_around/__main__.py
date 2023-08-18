@@ -208,7 +208,7 @@ def main(argv: List[str]) -> int:
     )
     tracks.export_plain_csv(results_csv_fpath, {})
 
-    make_video_with_tracks(
+    fta.make_video_with_tracks(
         args.video_fpath, tracks_video_fpath, frames_dir, results_csv_fpath
     )
     _logger.info("Video file with tracks created '%s'", tracks_video_fpath)
