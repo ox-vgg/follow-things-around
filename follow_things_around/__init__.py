@@ -320,10 +320,13 @@ def track(
         for box_idx, detection in enumerate(frame_detections):
             box_key = str(box_idx)
             # SVT uses a [track_id, x, y, w, h] for each detection
-            # (list not tuple because it changes `tracker_id`.
+            # (list not tuple because it changes `tracker_id`).
             detections4svt[shot_id][frame_key][box_key] = [
                 UNKNOWN_TRACK_ID_MARKER,
-                *detection,
+                detection.x,
+                detection.y,
+                detection.w,
+                detection.h,
             ]
 
     # SVT also needs a separate map of frame id to relative filepaths.
