@@ -148,12 +148,6 @@ def ffmpeg_video_from_frames_and_video(
     frames_dir: str, in_video_fpath: str, out_video_fpath: str
 ) -> None:
     video_args = [
-        "-framerate",
-        str(ffprobe_get_frame_rate(in_video_fpath)),
-        "-pattern_type",
-        "glob",
-        "-i",
-        os.path.join(frames_dir, "*.jpg"),
         "-c:v",
         "libx264",
         "-map",
@@ -164,8 +158,6 @@ def ffmpeg_video_from_frames_and_video(
     audio_args = []
     if ffprobe_has_audio(in_video_fpath):
         audio_args = [
-            "-i",
-            in_video_fpath,
             "-c:a",
             "aac",  # https://github.com/ox-vgg/chimpanzee-tracking/issues/1
             "-map",
@@ -177,6 +169,14 @@ def ffmpeg_video_from_frames_and_video(
             "-y",  # overwrite output files without asking
             "-loglevel",
             FFMPEG_LOG_LEVEL,
+            "-framerate",
+            str(ffprobe_get_frame_rate(in_video_fpath)),
+            "-pattern_type",
+            "glob",
+            "-i",
+            os.path.join(frames_dir, "*.jpg"),
+            "-i",
+            in_video_fpath,
             *video_args,
             *audio_args,
             out_video_fpath,
