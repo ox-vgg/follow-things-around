@@ -22,15 +22,20 @@ dependencies = [
     # in Colab which already has it anyway, so declaring it here is
     # pointless and only creates problems.
     # "google-colab",
-    "ipython",
-    "ipywidgets",
     "matplotlib",
     "opencv-python",
     "pandas",
-    "plotly",
     "requests",
     "svt",
     "torch",
+]
+
+
+[project.optional-dependencies]
+widgets = [
+    "ipython",
+    "ipywidgets",
+    "plotly",
 ]
 
 

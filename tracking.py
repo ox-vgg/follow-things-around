@@ -192,7 +192,7 @@ print("Installing detectron2 (this will take a few minutes to finish)")
 
 # Finally, Follow-Things-Around
 print("Installing Follow-Things-Around")
-# !pip install --quiet git+https://github.com/ox-vgg/follow-things-around.git
+# !pip install --quiet 'follow-things-around[widgets] @ git+https://github.com/ox-vgg/follow-things-around.git'
 
 import glob
 import json
@@ -209,13 +209,13 @@ import torch
 import follow_things_around
 from follow_things_around import (
     detect,
-    display_detections,
     ffmpeg_video_to_frames,
     make_video_with_tracks,
     track,
     FramesDirDataset,
 )
 from follow_things_around.via import detections_to_via2
+from follow_things_around.widgets import display_detections
 
 logging.basicConfig()
 _logger = logging.getLogger()
