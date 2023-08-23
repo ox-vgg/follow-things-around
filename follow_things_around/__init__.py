@@ -24,14 +24,16 @@ import tempfile
 from typing import Dict, List, NamedTuple, Tuple
 
 import cv2
+import detectron2.checkpoint
 import detectron2.config
-import detectron2.engine
+import detectron2.data.transforms
 import detectron2.model_zoo
 import detectron2.utils.file_io
 import matplotlib.cm
 import numpy as np
 import pandas as pd
 import PIL.Image
+import torch
 import torch.utils.data
 from svt.siamrpn_tracker import siamrpn_tracker
 
@@ -219,20 +221,78 @@ FrameDetections = List[Detection]
 DatasetDetections = List[FrameDetections]
 
 
+class PredictorConfiguration:
+    """This is tying us to detectron2 which is not great since the
+    project is effectively abandoned by upstream.
+    """
+    def __init__(self, fpath: str) -> None:
+        self._cfg = detectron2.config.LazyConfig.load(
+            detectron2.utils.file_io.PathManager.get_local_path(fpath)
+        )
+        if "fta_config" not in self._cfg:
+            raise Exception(f"config '{fpath}' is missing 'fta_config' field")
+        if "version" not in self._cfg.fta_config:
+            raise Exception(f"config '{fpath}' is missing 'fta_config.version' field")
+        if self._cfg.fta_config.version != 1:
+            raise Exception(f"unknown 'fta_config.version' in '{fpath}'")
+
+    def build_model(self):
+        model = detectron2.config.instantiate(self._cfg.model)
+        model = model.to(DEFAULT_DEVICE)
+        checkpointer = detectron2.checkpoint.DetectionCheckpointer(model)
+        checkpointer.load(self._cfg.fta_config.checkpoint)
+        return model
+
+    def get_input_format(self) -> str:
+        return self._cfg.fta_config.input_format
+
+    def get_data_transforms(self):
+        return detectron2.config.instantiate(
+            self._cfg.fta_config.data_transforms
+        )
+
+
+class Predictor:
+    """Simple end to end detection predictor given a LazyConfig.
+
+    Detectron2 has ``detectron2.engine.DefaultPredictor`` but that
+    only works with the old style YACS based config.  We have moved to
+    their new LazyConfigs so we need to have our own Predictor class
+    until they support it upstream (see
+    https://github.com/facebookresearch/detectron2/pull/3755)
+
+    """
+
+    def __init__(self, cfg: PredictorConfiguration) -> None:
+        self._model = cfg.build_model()
+        self._data_transforms = cfg.get_data_transforms()
+        self._input_format = cfg.get_input_format()
+        if self._input_format not in ["RGB", "BGR"]:
+            raise Exception("Input format should be 'RGB' or 'BGR' but is '{self._input_format}'")
+        self._model.eval()
+
+    def __call__(self, original_image):
+        with torch.no_grad():
+            # Apply pre-processing to image.
+            if self._input_format == "RGB":
+                # whether the model expects BGR inputs or RGB
+                original_image = original_image[:, :, ::-1]
+            height, width = original_image.shape[:2]
+            image = self._data_transforms(
+                detectron2.data.transforms.AugInput(original_image)
+            ).apply_image(original_image)
+            image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
+            inputs = {"image": image, "height": height, "width": width}
+            predictions = self._model([inputs])[0]
+            return predictions
+
+
 def detect(
     dataset: FramesDirDataset,
     detection_model_config_path: str,
     class_idx: int,
 ) -> DatasetDetections:
-    d2_cfg = detectron2.config.get_cfg()
-    d2_cfg.merge_from_file(
-        detectron2.utils.file_io.PathManager.get_local_path(
-            detection_model_config_path
-        )
-    )
-    d2_cfg.MODEL.DEVICE = DEFAULT_DEVICE
-
-    predictor = detectron2.engine.DefaultPredictor(d2_cfg)
+    predictor = Predictor(PredictorConfiguration(detection_model_config_path))
     _logger.info("Finished loading model %s", detection_model_config_path)
 
     _logger.info("Starting detection phase")
@@ -349,7 +409,6 @@ def track(
 
     _logger.info("Finished tracking")
     return svt_detections
-
 
 
 def draw_tracks_in_img(img, frame_tracks: pd.DataFrame) -> None:

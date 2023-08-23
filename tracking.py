@@ -250,56 +250,56 @@ google.colab.drive.mount('/content/drive')
 #@markdown Do not forget to "run" this cell after making your
 #@markdown selection.
 
-THING_TO_TRACK = 'Chimpanzee faces'  #@param ["Chimpanzee faces", "Chimpanzee bodies", "Birds", "Cats", "Dogs", "Horses", "Sheep", "Cows", "Elephants", "Bears", "Zebras", "Giraffes"]
+THING_TO_TRACK = "Chimpanzee faces"  #@param ["Chimpanzee faces", "Chimpanzee bodies", "Birds", "Cats", "Dogs", "Horses", "Sheep", "Cows", "Elephants", "Bears", "Zebras", "Giraffes"]
 
 THING_TO_MODEL_CONFIG = {
-    "Chimpanzee faces" : {
-        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-CFbootstrap.yaml",
-        "class-idx" : 0,
+    "Chimpanzee faces": {
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_LSJ-CFbootstrap.py",
+        "class-idx": 0,
     },
-    "Chimpanzee bodies" : {
-        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-imdb_5k_sup.yaml",
-        "class-idx" : 0,
+    "Chimpanzee bodies": {
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_LSJ-imdb_5k_sup.py",
+        "class-idx": 0,
     },
-    "Birds" : {
-        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
-        "class-idx" : 14,
+    "Birds": {
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
+        "class-idx": 14,
     },
-    "Cats" : {
-        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
-        "class-idx" : 15,
+    "Cats": {
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
+        "class-idx": 15,
     },
-    "Dogs" : {
-        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
-        "class-idx" : 16,
+    "Dogs": {
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
+        "class-idx": 16,
     },
-    "Horses" : {
-        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
-        "class-idx" : 17,
+    "Horses": {
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
+        "class-idx": 17,
     },
-    "Sheep" : {
-        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
-        "class-idx" : 18,
+    "Sheep": {
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
+        "class-idx": 18,
     },
-    "Cows" : {
-        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
-        "class-idx" : 19,
+    "Cows": {
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
+        "class-idx": 19,
     },
-    "Elephants" : {
-        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
-        "class-idx" : 20,
+    "Elephants": {
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
+        "class-idx": 20,
     },
-    "Bears" : {
-        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
-        "class-idx" : 21,
+    "Bears": {
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
+        "class-idx": 21,
     },
-    "Zebras" : {
-        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
-        "class-idx" : 22,
+    "Zebras": {
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
+        "class-idx": 22,
     },
-    "Giraffes" : {
-        "config-url" : "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
-        "class-idx" : 23,
+    "Giraffes": {
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
+        "class-idx": 23,
     },
 }
 
@@ -377,7 +377,7 @@ if not DETECTION_MODEL_CONFIG_URL:
 #@markdown lead to false tracks that need to be manually removed
 #@markdown later.
 
-DETECTION_THRESHOLD = 0.6  #@param {type: "slider", min: 0.0, max: 1.0, step: 0.01}
+DETECTION_THRESHOLD = 0.9  #@param {type: "slider", min: 0.0, max: 1.0, step: 0.01}
 
 
 # %% cellView="form" id="nmuWC94sFHUw"

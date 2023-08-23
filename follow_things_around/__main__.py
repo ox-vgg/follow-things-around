@@ -40,55 +40,59 @@ _logger = logging.getLogger(__name__)
 
 ## TODO: the list of available configs is duplicated in the notebook
 
-THING_TO_TRACK = "Chimpanzee faces"  # @param ["Chimpanzee faces", "Chimpanzee bodies", "Birds", "Cats", "Dogs", "Horses", "Sheep", "Cows", "Elephants", "Bears", "Zebras", "Giraffes"]
+THING_TO_TRACK = "Chimpanzee faces"  #@param ["Chimpanzee faces", "Orangutan faces", "Chimpanzee bodies", "Birds", "Cats", "Dogs", "Horses", "Sheep", "Cows", "Elephants", "Bears", "Zebras", "Giraffes"]
 
 THING_TO_MODEL_CONFIG = {
     "Chimpanzee faces": {
-        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-CFbootstrap.yaml",
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_LSJ-CFbootstrap.py",
+        "class-idx": 0,
+    },
+    "Orangutan faces": {
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_LSJ-orangutan-faces.py",
         "class-idx": 0,
     },
     "Chimpanzee bodies": {
-        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-imdb_5k_sup.yaml",
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_LSJ-imdb_5k_sup.py",
         "class-idx": 0,
     },
     "Birds": {
-        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
         "class-idx": 14,
     },
     "Cats": {
-        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
         "class-idx": 15,
     },
     "Dogs": {
-        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
         "class-idx": 16,
     },
     "Horses": {
-        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
         "class-idx": 17,
     },
     "Sheep": {
-        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
         "class-idx": 18,
     },
     "Cows": {
-        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
         "class-idx": 19,
     },
     "Elephants": {
-        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
         "class-idx": 20,
     },
     "Bears": {
-        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
         "class-idx": 21,
     },
     "Zebras": {
-        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
         "class-idx": 22,
     },
     "Giraffes": {
-        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/faster_rcnn_R_50_FPN_1x-coco2017.yaml",
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_400ep_LSJ-coco2017.py",
         "class-idx": 23,
     },
 }
@@ -130,8 +134,8 @@ def main(argv: List[str]) -> int:
     argv_parser.add_argument(
         "--detection-threshold",
         type=score_value,
-        default=0.6,
-        help="Detections with scores below this value are ignored for tracking"
+        default=0.9,
+        help="Detections with scores below this value are ignored for tracking",
     )
     argv_parser.add_argument(
         "what",
@@ -206,7 +210,7 @@ def main(argv: List[str]) -> int:
         follow_things_around.filter_detections(
             detections, args.detection_threshold
         ),
-        TRACKING_MODEL_URL
+        TRACKING_MODEL_URL,
     )
     tracks.export_via_project(
         results_via_fpath,
