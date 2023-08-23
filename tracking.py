@@ -192,7 +192,7 @@ print("Installing detectron2 (this will take a few minutes to finish)")
 
 # Finally, Follow-Things-Around
 print("Installing Follow-Things-Around")
-# !pip install --quiet 'follow-things-around[widgets] @ git+https://github.com/ox-vgg/follow-things-around.git'
+# !pip install --quiet 'follow-things-around[colab] @ git+https://github.com/ox-vgg/follow-things-around.git'
 
 import glob
 import json
