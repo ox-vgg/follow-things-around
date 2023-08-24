@@ -210,6 +210,7 @@ import follow_things_around
 from follow_things_around import (
     detect,
     ffmpeg_video_to_frames,
+    filter_detections,
     make_video_with_tracks,
     track,
     FramesDirDataset,
@@ -369,11 +370,12 @@ if not DETECTION_MODEL_CONFIG_URL:
 
 #@markdown When the model detects something, that detection is
 #@markdown made with a confidence score.  Detections with a confidence
-#@markdown score lower than the threshold are ignored.  If you set the
-#@markdown threshold too high, you may miss detections in some frames
-#@markdown which need to be filled by the tracker..  If you set it too
-#@markdown low, false detections will lead to false tracks that need
-#@markdown to be manually removed later.
+#@markdown score lower than the threshold will be ignored during
+#@markdown tracking.  If you set the threshold too high, you may miss
+#@markdown detections in some frames which need to be filled by the
+#@markdown tracker..  If you set it too low, false detections will
+#@markdown lead to false tracks that need to be manually removed
+#@markdown later.
 
 DETECTION_THRESHOLD = 0.6  #@param {type: "slider", min: 0.0, max: 1.0, step: 0.01}
 
@@ -501,12 +503,7 @@ if len(dataset) == 0:
         " the video to frames?" % FRAMES_DIR
     )
 
-detections = detect(
-    dataset,
-    DETECTION_MODEL_CONFIG_URL,
-    DETECTION_CLASS_IDX,
-    DETECTION_THRESHOLD,
-)
+detections = detect(dataset, DETECTION_MODEL_CONFIG_URL, DETECTION_CLASS_IDX)
 
 with open(DETECTIONS_PKL_FPATH, 'wb') as fh:
     pickle.dump({'detections': detections}, fh)
@@ -549,7 +546,11 @@ _logger.info('Detection results loaded from \'%s\'', DETECTIONS_PKL_FPATH)
 # %% cellView="form" id="GodRuQQ4FHU3"
 #@markdown ### 5.1 - Run tracking (option 1)
 
-tracks = track(dataset, detections, TRACKING_MODEL_URL)
+tracks = track(
+    dataset,
+    filter_detections(detections, DETECTION_THRESHOLD),
+    detections,
+)
 
 tracks.export_via_project(
     RESULTS_VIA_FPATH,

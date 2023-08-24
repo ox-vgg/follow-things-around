@@ -223,20 +223,13 @@ def detect(
     dataset: FramesDirDataset,
     detection_model_config_path: str,
     class_idx: int,
-    visual_threshold: float,
 ) -> DatasetDetections:
-    if visual_threshold < 0.0 or visual_threshold > 1.0:
-        raise ValueError(
-            "visual_threshold needs to be a number between 0.0 and 1.0"
-        )
-
     d2_cfg = detectron2.config.get_cfg()
     d2_cfg.merge_from_file(
         detectron2.utils.file_io.PathManager.get_local_path(
             detection_model_config_path
         )
     )
-    d2_cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = visual_threshold
     d2_cfg.MODEL.DEVICE = DEFAULT_DEVICE
 
     predictor = detectron2.engine.DefaultPredictor(d2_cfg)
@@ -285,6 +278,19 @@ def detect(
 
     _logger.info("Finished detections")
     return dataset_detections
+
+
+def filter_detections(
+    original: DatasetDetections, thresh: float
+) -> DatasetDetections:
+    if thresh < 0.0 or thresh > 1.0:
+        raise ValueError(
+            "visual_threshold needs to be a number between 0.0 and 1.0"
+        )
+    filtered = []
+    for frame_detections in original:
+        filtered.append([d for d in frame_detections if d.score >= thresh])
+    return filtered
 
 
 def track(

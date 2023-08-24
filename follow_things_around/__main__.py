@@ -131,7 +131,7 @@ def main(argv: List[str]) -> int:
         "--detection-threshold",
         type=score_value,
         default=0.6,
-        help="Detections with scores below this value are ignored"
+        help="Detections with scores below this value are ignored for tracking"
     )
     argv_parser.add_argument(
         "what",
@@ -188,7 +188,6 @@ def main(argv: List[str]) -> int:
         dataset,
         detection_model_config_url,
         detection_class_idx,
-        args.detection_threshold,
     )
     with open(detections_via_fpath, "w") as fh:
         json.dump(
@@ -196,8 +195,18 @@ def main(argv: List[str]) -> int:
             fh,
         )
 
+    ## Filtering of detections by confidence score only happens during
+    ## tracking for two reasons: 1) all detections are saved on the
+    ## detections via project which helps in debugging and in picking
+    ## the final detection threshold to use, and 2) if it'the filter
+    ## happens during tracking, we can reuse previous detections
+    ## results to test different threshold.
     tracks = follow_things_around.track(
-        dataset, detections, TRACKING_MODEL_URL
+        dataset,
+        follow_things_around.filter_detections(
+            detections, args.detection_threshold
+        ),
+        TRACKING_MODEL_URL
     )
     tracks.export_via_project(
         results_via_fpath,
