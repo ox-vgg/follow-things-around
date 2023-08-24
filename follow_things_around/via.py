@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ## Copyright 2023 David Miguel Susano Pinto <pinto@robots.ox.ac.uk>
 ##
