@@ -18,7 +18,7 @@ import IPython.display
 import ipywidgets
 import plotly.express
 
-from follow_thins_around import FramesDirDataset
+from follow_things_around import FramesDirDataset
 
 
 def display_detections(
