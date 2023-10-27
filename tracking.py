@@ -549,7 +549,7 @@ _logger.info('Detection results loaded from \'%s\'', DETECTIONS_PKL_FPATH)
 tracks = track(
     dataset,
     filter_detections(detections, DETECTION_THRESHOLD),
-    detections,
+    TRACKING_MODEL_URL,
 )
 
 tracks.export_via_project(
