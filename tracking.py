@@ -250,11 +250,15 @@ google.colab.drive.mount('/content/drive')
 #@markdown Do not forget to "run" this cell after making your
 #@markdown selection.
 
-THING_TO_TRACK = "Chimpanzee faces"  #@param ["Chimpanzee faces", "Chimpanzee bodies", "Birds", "Cats", "Dogs", "Horses", "Sheep", "Cows", "Elephants", "Bears", "Zebras", "Giraffes"]
+THING_TO_TRACK = "Chimpanzee faces"  #@param ["Chimpanzee faces", "Orangutan faces", "Chimpanzee bodies", "Birds", "Cats", "Dogs", "Horses", "Sheep", "Cows", "Elephants", "Bears", "Zebras", "Giraffes"]
 
 THING_TO_MODEL_CONFIG = {
     "Chimpanzee faces": {
         "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_LSJ-CFbootstrap.py",
+        "class-idx": 0,
+    },
+    "Orangutan faces": {
+        "config-url": "https://thor.robots.ox.ac.uk/models/staging/chimp-tracking/mask_rcnn_R_50_FPN_LSJ-orangutan-faces.py",
         "class-idx": 0,
     },
     "Chimpanzee bodies": {
