@@ -1,5 +1,7 @@
 # Follow Things Around v2 beta
 
+<img src="tracks.gif" alt="Animal track predictions from Follow Things Around v2 on a panther video" />
+
 **[Follow Things Around](https://www.robots.ox.ac.uk/~vgg/software/follow-things-around/) is a program for easily detecting and tracking animals in videos, no programming skills required.**
 
 You can open this notebook in Google Colab using the button below:
